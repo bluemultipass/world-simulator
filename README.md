@@ -4,9 +4,13 @@ A civilizational-scale world simulator with ASCII art representation. The player
 
 ---
 
-## Core Design Principle
+## Core Design Principles
 
 **Player is God** — omniscient, can intervene at any time via natural language input
+
+**LLMs don't drive the simulation** — deterministic systems do. The LLM provides articulation only: giving voice to what agents experience and decide. It is mechanically inert. Removing it would not change how the simulation runs, only how the player understands it.
+
+**Time is narrative, not fixed** — ticks represent variable amounts of world time driven by an interestingness signal. A plague year gets full granular treatment; prehistoric centuries with nothing remarkable compress to a few ticks. The player is never watching nothing happen.
 
 ---
 
