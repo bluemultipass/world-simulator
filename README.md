@@ -4,14 +4,6 @@ A civilizational-scale world simulator with ASCII art representation. The player
 
 ---
 
-## Core Design Principles
-
-**Player is God** — omniscient, can intervene at any time via natural language input
-
-**Time is narrative, not fixed** — ticks represent variable amounts of world time driven by an interestingness signal. A plague year gets full granular treatment; prehistoric centuries with nothing remarkable compress to a few ticks. The player is never watching nothing happen.
-
----
-
 ## Documentation
 
 | Document | Contents |
