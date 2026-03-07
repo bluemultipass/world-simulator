@@ -4,13 +4,9 @@ A civilizational-scale world simulator with ASCII art representation. The player
 
 ---
 
-## Core Design Principles
+## Core Design Principle
 
-- **Player is God** — omniscient, can intervene at any time via natural language input
-- **Agents cannot lie to God** — but may suppress prayers out of shame, pride, or fear of judgment
-- **Interventions are open-ended** — the player types anything; agents respond rationally based on their state
-- **Conflicting prayers** — when agents pray for incompatible things, the player adjudicates. This is the core gameplay tension.
-- **No hardcoded intervention types** — the simulation interprets player input dynamically
+**Player is God** — omniscient, can intervene at any time via natural language input
 
 ---
 

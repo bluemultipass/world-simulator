@@ -38,6 +38,9 @@ An intervention that looks supernatural to a prehistoric tribe — curing diseas
 ### Intervention style is cumulative and irreversible
 The theological culture that emerges is built from the full history of player behavior. Overt early intervention followed by long absence produces mythologization the player cannot undo. Subtle intervention produces epistemic cultures that may develop toward naturalism. The player cannot reset agent priors — only add new evidence to an existing interpretive history. Every intervention, including choosing not to intervene, is a permanent contribution to that history.
 
+### Conflicting prayers
+When agents pray for incompatible outcomes — victory in the same battle, survival through the same famine, favor over a rival — the player adjudicates. There is no system to resolve this automatically. The player's choice is a real decision with real consequences for who survives, who gains faith, and what theology develops in each affected group. This is the core gameplay tension.
+
 ### Open implementation decisions
 These must be resolved before building the intervention and death systems:
 - Is resurrection supported? If yes, death state must be designed as reversible from the start
