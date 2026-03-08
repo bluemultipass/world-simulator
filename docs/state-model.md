@@ -312,6 +312,53 @@ Every civilization — including the focus civilization — has a `Civilization`
 | `location` | `RegionId` | Approximate geographic zone. More precise location is on the Cohort. |
 | `aggression` | `MetricValue` | Disposition toward neighbors. Rising + high `resource_pressure` → raids. |
 | `metrics` | `CivilizationalMetrics` | Detailed structural metrics. Fully populated for focus civ and related civs; sparse for distant civs. |
+| `inter_civ_relations` | `BTreeMap<CivId, CivRelation>` | Sparse — only civs with actual contact history. |
+
+---
+
+## CivRelation
+
+Bilateral record between two civilizations. Only exists for pairs that have made actual contact — absent entry means no known contact, not neutrality. Keyed by the other civ's `CivId` in `Civilization.inter_civ_relations`. Both sides maintain their own entry; the records are independent and may diverge (a civ that was raided and a civ that raided have different perspectives on what happened).
+
+Values accumulate from contact events — they are not assigned. `hostility` rises from raids and conflicts; `cooperation` rises from trade and cultural exchange. Both decay toward zero without contact, analogous to agent `Relationship` decay via `last_interaction_tick`.
+
+| Field | Type | Notes |
+|---|---|---|
+| `first_contact_tick` | `u64` | Tick of first recorded interaction. |
+| `last_contact_tick` | `u64` | For decay — accumulated values attenuate without contact. |
+| `hostility` | `f32` | Accumulated from raids and conflicts. Decays over time. |
+| `cooperation` | `f32` | Accumulated from trade and aid. Decays over time. |
+| `cultural_exchange` | `f32` | Degree of concept and capability transmission that has occurred. Decays slowly. Used to weight diffusion probability when contact recurs. |
+| `contact_log` | `Vec<CivContactEntry>` | Recent contact events ordered by tick. Pruned by age — entries older than a threshold are dropped once their contribution is reflected in the aggregate fields above. |
+
+### CivContactEntry
+
+| Field | Type | Notes |
+|---|---|---|
+| `tick` | `u64` | When the contact occurred. |
+| `contact_type` | `CivContactType` | What kind of interaction. |
+| `initiator` | `CivId` | Which civ initiated. |
+| `outcome` | `ContactOutcome` | `Success`, `Failure`, `Partial`. Drives how much aggregate fields shift. |
+
+### CivContactType
+
+```
+CivContactType:
+    Raid              // one civ attacks another for resources or territory
+    Trade             // resource exchange
+    Migration         // population movement across civ boundaries
+    Conflict          // organized, sustained violence; larger scale than a raid
+    CulturalContact   // proximity-based concept or capability diffusion opportunity
+```
+
+### ContactOutcome
+
+```
+ContactOutcome:
+    Success   // initiator achieved their goal
+    Failure   // initiator was repelled or objective unmet
+    Partial   // mixed result
+```
 
 ---
 
