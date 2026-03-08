@@ -46,6 +46,51 @@ Statistical boundary events are converted into narrative events that Tier 1 and 
 
 ---
 
+## Agent Layer Determinism
+
+The agent layer is deterministic: given the same initial world state and seed, the simulation produces identical output every time. This section documents the implementation constraints that make that true.
+
+### Seeded PRNG — the foundation
+
+All randomness flows through a single seeded `ChaChaRng`. The seed is part of world state and is serialized with it. Trait mutation at birth, utility tie-breaking, cultural transmission mutation, disease exposure, conflict lottery — all draw from this generator. It is passed explicitly to every system that needs it; no thread-local or global RNG state.
+
+### Deterministic iteration order — the most common footgun
+
+Rust's `HashMap` iterates in non-deterministic order by design. Iterating agents from a `HashMap` and applying updates sequentially produces different outcomes on different runs even with the same seed. **Rule: agent storage uses `BTreeMap` (keyed by agent ID) or a `Vec` with canonical sorting before iteration. `HashMap` is never used for any collection iterated during simulation logic.** This constraint must be established from day one — retrofitting it is painful.
+
+### Double-buffering for simultaneous updates
+
+When multiple agents act within the same tick, two approaches are possible:
+- **Sequential**: process agent A, update shared state, then process agent B against updated state → outcome depends on iteration order
+- **Double-buffer**: read all agents from state at tick start, compute all actions, then apply all updates atomically → outcome is order-independent
+
+The double-buffer pattern is correct for this sim. Agent behavior within a tick responds to world state at the start of that tick, not to other agents' actions mid-tick. The tick rate is slow enough that the additional memory cost is irrelevant.
+
+### Exponential delta-time for all decay and growth
+
+Every time-dependent system uses exponential forms, not linear approximations. A need decaying at rate `r` per year over `Δt` years:
+
+```
+new_value = current_value * (1 - r).powf(Δt)   // correct
+new_value = current_value - (r * Δt)            // wrong — goes negative, not mathematically honest
+```
+
+This applies to: need decay, cultural memory decay, relationship attenuation, population growth, belief drift. Linear forms are incorrect for variable tick lengths and must not appear in simulation logic.
+
+### Generational transmission within a tick
+
+If a tick represents 50 years and a generation is ~25 years, two full generational cycles occurred. Cultural transmission and memory decay must apply `floor(Δt / generation_length)` discrete steps, not a single aggregated decay. Each step applies its own transmission probability and mutation. The number of steps is deterministic given Δt and the generation length parameter.
+
+### Conflict resolution for shared resources
+
+When multiple agents contend for the same resource in the same tick (both read it as available via double-buffering), a canonical rule resolves priority: sort contenders by agent ID and process in order, or use the seeded PRNG for a lottery. The rule must be explicit and documented. Implicit ordering is where determinism breaks silently.
+
+### Threshold-crossing events and variable tick length
+
+A tick spanning 10 years may cross a threshold (epidemic onset, faith collapse, institutional formation) at year 7 — but this is only discoverable at tick completion. The resolution: **let the interestingness signal handle it**. As underlying conditions approach a threshold (disease load rising, meaning need critically unmet), the interestingness signal increases, ticks shorten, and threshold crossings naturally occur at finer granularity. This is not a workaround — it is the interestingness signal doing exactly what it is designed to do. No tick subdivision logic is needed.
+
+---
+
 ## Named Agent Lifecycle
 
 Agent lifecycle follows human lifecycle. Named agents are born, live, age, die. Simulation tier changes based on relevance during their life. After death they become history.
