@@ -6,27 +6,39 @@
 
 - [WorldState](#worldstate)
 - [WorldClock](#worldclock)
+- [ID Types](#id-types)
+- [AgentArchive](#agentarchive)
 - [Agent (Tier 1)](#agent-tier-1)
   - [Identity](#identity)
+    - [Sex](#sex)
   - [Needs](#needs)
   - [Traits](#traits)
   - [Relationships](#relationships)
     - [Relationship](#relationship)
+    - [BondType](#bondtype)
+    - [KinRelation](#kinrelation)
   - [Memory](#memory)
     - [MemoryEntry](#memoryentry)
+    - [EventRef](#eventref)
     - [BeliefEntry](#beliefentry)
+    - [KnowledgeState](#knowledgestate)
   - [Knowledge](#knowledge)
 - [Concept Registry](#concept-registry)
   - [Concept](#concept)
   - [ConceptType](#concepttype)
   - [UtilityModifier](#utilitymodifier)
   - [TransmissionProfile](#transmissionprofile)
+    - [TransmissionMedium](#transmissionmedium)
   - [EmergenceConditions](#emergenceconditions)
 - [Capability Graph](#capability-graph)
   - [Capability](#capability)
   - [DiscoveryMechanism](#discoverymechanism)
   - [One DAG, two node types](#one-dag-two-node-types)
+- [ActionTag](#actiontag)
 - [Cohort](#cohort)
+  - [AgeDistribution](#agedistribution)
+  - [NeedSatisfactionRates](#needsatisfactionrates)
+  - [TraitDistribution](#traitdistribution)
 - [Civilization](#civilization)
 - [CivRelation](#civrelation)
   - [CivContactEntry](#civcontactentry)
@@ -34,8 +46,14 @@
   - [CivContactType](#civcontacttype)
   - [ContactOutcome](#contactoutcome)
 - [PhysicalWorld](#physicalworld)
+  - [ClimateState](#climatestate)
+  - [DiseaseVector](#diseasevector)
   - [Tile](#tile)
+    - [TerrainType](#terraintype)
+    - [ResourceLevels](#resourcelevels)
+    - [RegenerationRates](#regenerationrates)
 - [CivilizationalMetrics](#civilizationalmetrics)
+  - [MetricField](#metricfield)
   - [MetricValue](#metricvalue)
   - [PopulationState](#populationstate)
   - [Why velocity is load-bearing](#why-velocity-is-load-bearing)
@@ -80,6 +98,33 @@ The top-level container. Serialized in full for save/load and determinism replay
 
 ---
 
+## ID Types
+
+All ID types are `u64` newtypes. Stable across the lifetime of the entity they identify. Never reused after entity death or removal.
+
+```
+AgentId:      u64
+CohortId:     u64
+CivId:        u64
+ConceptId:    u64
+CapabilityId: u64
+TileId:       u64
+RegionId:     u64
+Domain:       CapabilityId   // alias; used in Agent.knowledge to key per-capability mastery levels
+```
+
+---
+
+## AgentArchive
+
+Immutable store for dead agents. Written once at death; never modified after.
+
+| Field | Type | Notes |
+|---|---|---|
+| `agents` | `BTreeMap<AgentId, Agent>` | Keyed by id. Entry is sealed at the death tick. |
+
+---
+
 ## Agent (Tier 1)
 
 Full-fidelity named agent.
@@ -94,6 +139,14 @@ Full-fidelity named agent.
 | `sex` | `Sex` | Biological sex. Affects reproduction only. |
 | `location` | `TileId` | Current position in physical world. |
 | `cohort_id` | `CohortId` | The cohort this agent belongs to. They are a member of that population; individual tracking is the only thing that distinguishes them from unnamed members. |
+
+#### Sex
+
+```
+Sex:
+    Male
+    Female
+```
 
 ### Needs
 
@@ -148,6 +201,34 @@ Traits are not a fixed enum — the list will grow. Avoid building systems that 
 | `kin_relation` | `Option<KinRelation>` | `Parent`, `Child`, `Sibling`, `Cousin`, etc. Null if not kin. |
 | `last_interaction_tick` | `u64` | For attenuation — relationships decay without contact. |
 
+#### BondType
+
+```
+BondType:
+    Kin             // blood or adoptive family
+    Friendship      // chosen social bond
+    Romantic        // pair bond; may overlap with Kin after children
+    Hierarchy       // authority relationship: leader/follower, patron/client
+    Institutional   // role-defined: fellow guild member, co-religionist, fellow soldier
+```
+
+#### KinRelation
+
+Present only when `bond_type` is `Kin`. Describes the specific family relationship from the perspective of the agent who holds the record.
+
+```
+KinRelation:
+    Parent
+    Child
+    Sibling
+    Grandparent
+    Grandchild
+    Cousin
+    AuntOrUncle
+    NieceOrNephew
+    Spouse          // kin by marriage; may also carry Romantic bond_type
+```
+
 ### Memory
 
 | Field | Type | Notes |
@@ -164,6 +245,17 @@ Traits are not a fixed enum — the list will grow. Avoid building systems that 
 | `salience` | `f32` | Emotional weight. High-salience memories decay slower. |
 | `interpretation` | `String` | The agent's causal attribution at time of encoding. |
 
+#### EventRef
+
+Opaque reference into the global event log. The referenced event is immutable once archived.
+
+```
+EventRef {
+    tick:     u64,   // tick at which the event occurred
+    event_id: u64,   // stable identifier within the event log
+}
+```
+
 #### BeliefEntry
 
 | Field | Type | Notes |
@@ -172,6 +264,19 @@ Traits are not a fixed enum — the list will grow. Avoid building systems that 
 | `strength` | `f32` | Conviction. Decays without reinforcement. |
 | `generation_distance` | `u32` | Hops from original source. Increases with each transmission. Drives epistemic decay. |
 | `knowledge_state` | `KnowledgeState` | `Ignorance`, `Misattribution`, `RuleWithoutUnderstanding`, `PartialUnderstanding`, `FullUnderstanding` |
+
+#### KnowledgeState
+
+Represents how accurately an agent or cohort understands a domain or concept. Ordered from least to most accurate. Transmission and decay operate on this scale.
+
+```
+KnowledgeState:
+    Ignorance                // unaware the domain or concept exists
+    Misattribution           // has a causal model, but it is wrong (e.g., disease from bad air)
+    RuleWithoutUnderstanding // knows what to do but not why; fragile under novel conditions
+    PartialUnderstanding     // accurate on part of the causal chain; can improve with experience
+    FullUnderstanding        // accurate, complete causal model; can innovate and teach reliably
+```
 
 ### Knowledge
 
@@ -242,6 +347,16 @@ Examples for a communism-like ideology:
 | `mutation_rate` | `f32` | Probability that a transmitted copy drifts from the original. |
 | `required_medium` | `TransmissionMedium` | `Oral`, `Written`, `Ritual`, `DirectObservation`. Oral is lossy; written is stable. |
 | `charisma_amplified` | `bool` | Whether high-charisma transmitters dramatically increase spread rate. |
+
+#### TransmissionMedium
+
+```
+TransmissionMedium:
+    Oral              // spoken transmission; lossy, mutates with distance and time
+    Written           // text-based; stable but requires literacy capability
+    Ritual            // embodied practice; stable form, but meaning drifts without Written backup
+    DirectObservation // first-hand witness; highest initial strength, not directly re-transmissible
+```
 
 ### EmergenceConditions
 
@@ -316,6 +431,45 @@ They're stored in separate registries because the node types carry different fie
 
 ---
 
+## ActionTag
+
+Classifies actions for the purpose of utility modification and capability gating. `UtilityModifier.action_tag` and `Capability.unlocked_actions` both reference these tags. The list grows as capabilities and concepts expand.
+
+```
+ActionTag:
+    // Subsistence
+    Forage
+    Hunt
+    Fish
+    Farm
+
+    // Resource management
+    ShareResources
+    Redistribute
+    HoardResources
+    Trade
+
+    // Conflict
+    Raid
+    Defend
+    Flee
+
+    // Leadership and social
+    DeferToHierarchy
+    AssertDominance
+    Negotiate
+
+    // Cultural and epistemic
+    TeachConcept
+    PerformRitual
+    Explore
+    Innovate
+```
+
+Like traits, this list is open-ended. Avoid building systems that assume a fixed action count.
+
+---
+
 ## Cohort
 
 Represents the full population of a group — named agents included. Named agents who belong to this cohort have individual `Agent` records and are simulated at full fidelity; their states contribute to the cohort's aggregate fields each tick. Everyone else is simulated only at the aggregate level. `population.count` covers everyone.
@@ -339,6 +493,48 @@ The same struct is used for all cohorts. **Pipeline depth varies by fidelity lev
 | `capability_profile` | `BTreeMap<CapabilityId, f32>` | Aggregate mastery level per capability. Sparse for distant civs; full for related ones. |
 | `location` | `TileId` | Centroid or primary tile. |
 | `affiliation` | `Option<AgentId>` | Named leader if one has emerged. Full-pipeline only. |
+
+### AgeDistribution
+
+Rough demographic breakdown. Full-pipeline only; `None` for sparse cohorts.
+
+```
+AgeDistribution {
+    children: f32,   // fraction of population under ~15 years
+    adults:   f32,   // fraction ~15–60 years
+    elders:   f32,   // fraction over ~60 years
+    // fractions sum to 1.0
+}
+```
+
+### NeedSatisfactionRates
+
+Aggregate need satisfaction across the cohort. Mirrors the per-need fields on `Agent.needs`, averaged over all members. Full-pipeline only.
+
+```
+NeedSatisfactionRates {
+    food:      f32,
+    water:     f32,
+    sleep:     f32,
+    shelter:   f32,
+    warmth:    f32,
+    safety:    f32,
+    belonging: f32,
+    status:    f32,
+    meaning:   f32,
+}
+```
+
+### TraitDistribution
+
+Mean and variance per trait across the cohort. Full-pipeline only.
+
+```
+TraitDistribution {
+    means:     BTreeMap<String, f32>,   // mean trait value across cohort members
+    variances: BTreeMap<String, f32>,   // variance per trait; high variance = diverse cohort
+}
+```
 
 ---
 
@@ -442,6 +638,32 @@ ContactOutcome:
 | `climate` | `ClimateState` | Current climate parameters. Evolves each tick. |
 | `disease_vectors` | `Vec<DiseaseVector>` | Active disease populations and spread state. |
 
+### ClimateState
+
+Global climate parameters. Evolves each tick via slow drift and occasional shocks.
+
+```
+ClimateState {
+    temperature:   f32,   // global offset from baseline; affects terrain productivity and warmth need decay
+    precipitation: f32,   // global moisture level; affects food and water availability
+    volatility:    f32,   // rate of climate drift; high = faster change, more frequent shocks
+}
+```
+
+### DiseaseVector
+
+A single active disease population and its spread state. A world may have multiple active vectors simultaneously.
+
+```
+DiseaseVector {
+    label:          String,
+    virulence:      f32,         // transmission probability per contact per year
+    lethality:      f32,         // death probability given infection
+    immunity_decay: f32,         // rate at which acquired immunity fades, per year
+    active_tiles:   Vec<TileId>, // tiles currently experiencing active spread
+}
+```
+
 ### Tile
 
 | Field | Type | Notes |
@@ -452,6 +674,46 @@ ContactOutcome:
 | `resources` | `ResourceLevels` | Current levels: food, water, stone, wood, metal. All `f32`. |
 | `resource_regeneration` | `RegenerationRates` | Per resource, per year. |
 | `carrying_capacity` | `u32` | Max sustainable population given current resources and tech. |
+
+#### TerrainType
+
+```
+TerrainType:
+    Grassland   // open plains; high food, easy movement
+    Forest      // dense woodland; moderate food, wood resource, slower movement
+    Desert      // arid; low food and water, high warmth stress
+    Mountain    // high elevation; low food, stone resource, very slow movement
+    Wetland     // marshy; moderate food and water, disease risk elevated
+    Coast       // shoreline; fishing access, trade route endpoint
+```
+
+#### ResourceLevels
+
+Current extractable resource quantities on a tile. All `f32`, representing available units relative to a per-terrain baseline.
+
+```
+ResourceLevels {
+    food:  f32,
+    water: f32,
+    stone: f32,
+    wood:  f32,
+    metal: f32,
+}
+```
+
+#### RegenerationRates
+
+Per-resource natural replenishment rate. Units per year. Affected by climate and capability (e.g., farming raises effective food regeneration).
+
+```
+RegenerationRates {
+    food:  f32,
+    water: f32,
+    stone: f32,
+    wood:  f32,
+    metal: f32,
+}
+```
 
 ---
 
@@ -473,6 +735,28 @@ Each metric stores both its current value and a smoothed velocity (rate of chang
 | `ritual_specialization` | `MetricValue` | Proportion of meaning-activity concentrated in specialist agents. |
 | `leadership_concentration` | `MetricValue` | Degree to which high-stakes decisions route through one agent. |
 | `redistribution_centrality` | `MetricValue` | Fraction of resource flow passing through a single node. |
+
+### MetricField
+
+Identifies a specific metric for use in threshold comparisons (e.g., in `EmergenceConditions` and `Capability.metric_thresholds`). Covers both `CivilizationalMetrics` fields and the cohort-level summary fields available on all cohorts.
+
+```
+MetricField:
+    // CivilizationalMetrics fields
+    SocialScale
+    AdministrativeComplexity
+    TerritorialCoherence
+    SpecializationIndex
+    SurplusCapacity
+    RitualSpecialization
+    LeadershipConcentration
+    RedistributionCentrality
+
+    // Cohort summary fields (available for all cohorts including sparse ones)
+    Cohesion
+    ResourcePressure
+    CapabilityLevel
+```
 
 ### MetricValue
 
