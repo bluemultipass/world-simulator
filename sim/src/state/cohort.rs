@@ -5,21 +5,12 @@ use serde::{Deserialize, Serialize};
 use super::ids::{AgentId, CapabilityId, CohortId, ConceptId, TileId};
 
 /// Current value and smoothed rate of change for a civilizational metric.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct MetricValue {
     /// Current position `[0.0, 1.0]`.
     pub value: f32,
     /// Smoothed rate of change, per year; negative = declining.
     pub velocity: f32,
-}
-
-impl Default for MetricValue {
-    fn default() -> Self {
-        Self {
-            value: 0.0,
-            velocity: 0.0,
-        }
-    }
 }
 
 /// Identifies a specific metric for threshold comparisons (e.g., `EmergenceConditions`,
@@ -67,7 +58,7 @@ impl Default for AgeDistribution {
 
 /// Aggregate need satisfaction across the cohort. Mirrors per-need fields on
 /// `Agent.needs`, averaged over all members. Full-pipeline only.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct NeedSatisfactionRates {
     pub food: f32,
     pub water: f32,
@@ -80,24 +71,8 @@ pub struct NeedSatisfactionRates {
     pub meaning: f32,
 }
 
-impl Default for NeedSatisfactionRates {
-    fn default() -> Self {
-        Self {
-            food: 0.0,
-            water: 0.0,
-            sleep: 0.0,
-            shelter: 0.0,
-            warmth: 0.0,
-            safety: 0.0,
-            belonging: 0.0,
-            status: 0.0,
-            meaning: 0.0,
-        }
-    }
-}
-
 /// Mean and variance per trait across the cohort. Full-pipeline only.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct TraitDistribution {
     /// Mean trait value across cohort members.
     pub means: BTreeMap<String, f32>,
@@ -105,17 +80,8 @@ pub struct TraitDistribution {
     pub variances: BTreeMap<String, f32>,
 }
 
-impl Default for TraitDistribution {
-    fn default() -> Self {
-        Self {
-            means: BTreeMap::new(),
-            variances: BTreeMap::new(),
-        }
-    }
-}
-
 /// Used where population is a raw count rather than a normalized value.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct PopulationState {
     /// Current headcount.
     pub count: u32,
@@ -123,18 +89,9 @@ pub struct PopulationState {
     pub growth_rate: f32,
 }
 
-impl Default for PopulationState {
-    fn default() -> Self {
-        Self {
-            count: 0,
-            growth_rate: 0.0,
-        }
-    }
-}
-
 /// Represents the full population of a group — named agents included.
 /// The same struct is used for all cohorts; pipeline depth varies by fidelity level.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct Cohort {
     pub id: CohortId,
     pub label: String,
@@ -160,24 +117,4 @@ pub struct Cohort {
     pub location: TileId,
     /// Named leader if one has emerged. Full-pipeline only.
     pub affiliation: Option<AgentId>,
-}
-
-impl Default for Cohort {
-    fn default() -> Self {
-        Self {
-            id: CohortId::default(),
-            label: String::new(),
-            population: PopulationState::default(),
-            cohesion: MetricValue::default(),
-            resource_pressure: MetricValue::default(),
-            capability_level: MetricValue::default(),
-            age_distribution: None,
-            need_satisfaction: None,
-            trait_distribution: None,
-            belief_profile: BTreeMap::new(),
-            capability_profile: BTreeMap::new(),
-            location: TileId::default(),
-            affiliation: None,
-        }
-    }
 }

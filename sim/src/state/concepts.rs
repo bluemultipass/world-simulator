@@ -45,7 +45,7 @@ pub enum TransmissionMedium {
     DirectObservation,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct TransmissionProfile {
     /// Probability of transmission per social contact per year.
     pub base_rate: f32,
@@ -56,37 +56,15 @@ pub struct TransmissionProfile {
     pub charisma_amplified: bool,
 }
 
-impl Default for TransmissionProfile {
-    fn default() -> Self {
-        Self {
-            base_rate: 0.0,
-            mutation_rate: 0.0,
-            required_medium: TransmissionMedium::default(),
-            charisma_amplified: false,
-        }
-    }
-}
-
 /// What must be true in the local civilization for this concept to come into existence.
 /// Always checked against the specific civilization's state — not global.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct EmergenceConditions {
     pub metric_thresholds: Vec<(MetricField, f32)>,
     pub required_concepts: Vec<ConceptId>,
     pub population_minimum: Option<u32>,
     /// If true, can only enter via player divine action.
     pub player_intervention: bool,
-}
-
-impl Default for EmergenceConditions {
-    fn default() -> Self {
-        Self {
-            metric_thresholds: Vec::new(),
-            required_concepts: Vec::new(),
-            population_minimum: None,
-            player_intervention: false,
-        }
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

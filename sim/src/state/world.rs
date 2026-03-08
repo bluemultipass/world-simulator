@@ -32,18 +32,10 @@ impl Default for WorldClock {
 }
 
 /// Immutable store for dead agents. Written once at death; never modified after.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct AgentArchive {
     /// Keyed by id. Entry is sealed at the death tick.
     pub agents: BTreeMap<AgentId, Agent>,
-}
-
-impl Default for AgentArchive {
-    fn default() -> Self {
-        Self {
-            agents: BTreeMap::new(),
-        }
-    }
 }
 
 /// The top-level simulation container. Serialized in full for save/load and determinism replay.

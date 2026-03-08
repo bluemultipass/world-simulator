@@ -17,7 +17,7 @@ pub enum TerrainType {
 
 /// Current extractable resource quantities on a tile.
 /// All `f32`, representing available units relative to a per-terrain baseline.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ResourceLevels {
     pub food: f32,
     pub water: f32,
@@ -26,21 +26,9 @@ pub struct ResourceLevels {
     pub metal: f32,
 }
 
-impl Default for ResourceLevels {
-    fn default() -> Self {
-        Self {
-            food: 0.0,
-            water: 0.0,
-            stone: 0.0,
-            wood: 0.0,
-            metal: 0.0,
-        }
-    }
-}
-
 /// Per-resource natural replenishment rate. Units per year.
 /// Affected by climate and capability (e.g., farming raises effective food regeneration).
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct RegenerationRates {
     pub food: f32,
     pub water: f32,
@@ -49,19 +37,7 @@ pub struct RegenerationRates {
     pub metal: f32,
 }
 
-impl Default for RegenerationRates {
-    fn default() -> Self {
-        Self {
-            food: 0.0,
-            water: 0.0,
-            stone: 0.0,
-            wood: 0.0,
-            metal: 0.0,
-        }
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct Tile {
     pub id: TileId,
     pub terrain: TerrainType,
@@ -71,19 +47,6 @@ pub struct Tile {
     pub resource_regeneration: RegenerationRates,
     /// Max sustainable population given current resources and tech.
     pub carrying_capacity: u32,
-}
-
-impl Default for Tile {
-    fn default() -> Self {
-        Self {
-            id: TileId::default(),
-            terrain: TerrainType::default(),
-            elevation: 0.0,
-            resources: ResourceLevels::default(),
-            resource_regeneration: RegenerationRates::default(),
-            carrying_capacity: 0,
-        }
-    }
 }
 
 /// Global climate parameters. Evolves each tick via slow drift and occasional shocks.
@@ -109,7 +72,7 @@ impl Default for ClimateState {
 
 /// A single active disease population and its spread state.
 /// A world may have multiple active vectors simultaneously.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct DiseaseVector {
     pub label: String,
     /// Transmission probability per contact per year.
@@ -122,31 +85,9 @@ pub struct DiseaseVector {
     pub active_tiles: Vec<TileId>,
 }
 
-impl Default for DiseaseVector {
-    fn default() -> Self {
-        Self {
-            label: String::new(),
-            virulence: 0.0,
-            lethality: 0.0,
-            immunity_decay: 0.0,
-            active_tiles: Vec::new(),
-        }
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct PhysicalWorld {
     pub tiles: BTreeMap<TileId, Tile>,
     pub climate: ClimateState,
     pub disease_vectors: Vec<DiseaseVector>,
-}
-
-impl Default for PhysicalWorld {
-    fn default() -> Self {
-        Self {
-            tiles: BTreeMap::new(),
-            climate: ClimateState::default(),
-            disease_vectors: Vec::new(),
-        }
-    }
 }

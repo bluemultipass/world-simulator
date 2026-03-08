@@ -73,7 +73,7 @@ pub struct CivAgreement {
 
 /// Bilateral record between two civilizations with actual contact history.
 /// Both sides maintain independent entries; they may diverge.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct CivRelation {
     pub first_contact_tick: u64,
     /// For decay — accumulated values attenuate without contact.
@@ -90,23 +90,9 @@ pub struct CivRelation {
     pub contact_log: Vec<CivContactEntry>,
 }
 
-impl Default for CivRelation {
-    fn default() -> Self {
-        Self {
-            first_contact_tick: 0,
-            last_contact_tick: 0,
-            hostility: 0.0,
-            cooperation: 0.0,
-            cultural_exchange: 0.0,
-            agreements: Vec::new(),
-            contact_log: Vec::new(),
-        }
-    }
-}
-
 /// Detailed structural metrics for a civilization.
 /// Fully populated for focus civ and related civs; sparse for distant civs.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct CivilizationalMetrics {
     pub social_scale: MetricValue,
     pub administrative_complexity: MetricValue,
@@ -118,22 +104,7 @@ pub struct CivilizationalMetrics {
     pub redistribution_centrality: MetricValue,
 }
 
-impl Default for CivilizationalMetrics {
-    fn default() -> Self {
-        Self {
-            social_scale: MetricValue::default(),
-            administrative_complexity: MetricValue::default(),
-            territorial_coherence: MetricValue::default(),
-            specialization_index: MetricValue::default(),
-            surplus_capacity: MetricValue::default(),
-            ritual_specialization: MetricValue::default(),
-            leadership_concentration: MetricValue::default(),
-            redistribution_centrality: MetricValue::default(),
-        }
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct Civilization {
     pub id: CivId,
     pub label: String,
@@ -145,18 +116,4 @@ pub struct Civilization {
     pub metrics: CivilizationalMetrics,
     /// Sparse — only civs with actual contact history.
     pub inter_civ_relations: BTreeMap<CivId, CivRelation>,
-}
-
-impl Default for Civilization {
-    fn default() -> Self {
-        Self {
-            id: CivId::default(),
-            label: String::new(),
-            cohort_id: CohortId::default(),
-            location: RegionId::default(),
-            aggression: MetricValue::default(),
-            metrics: CivilizationalMetrics::default(),
-            inter_civ_relations: BTreeMap::new(),
-        }
-    }
 }

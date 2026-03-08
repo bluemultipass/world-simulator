@@ -14,7 +14,7 @@ pub enum Sex {
 /// Per-need satisfaction levels. All `f32` in `[0.0, 1.0]`.
 /// `0.0` = completely unmet / critical, `1.0` = fully satisfied.
 /// Decay exponentially over time; agents act to restore them.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct AgentNeeds {
     pub food: f32,
     pub water: f32,
@@ -27,26 +27,10 @@ pub struct AgentNeeds {
     pub meaning: f32,
 }
 
-impl Default for AgentNeeds {
-    fn default() -> Self {
-        Self {
-            food: 0.0,
-            water: 0.0,
-            sleep: 0.0,
-            shelter: 0.0,
-            warmth: 0.0,
-            safety: 0.0,
-            belonging: 0.0,
-            status: 0.0,
-            meaning: 0.0,
-        }
-    }
-}
-
 /// Stable dispositional values. Inherited with mutation at birth.
 /// Influence utility weight curves, not hard behavior rules.
 /// All `f32` in `[0.0, 1.0]`. This list will grow; avoid fixed-count assumptions.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct AgentTraits {
     pub brave: f32,
     pub cautious: f32,
@@ -59,24 +43,6 @@ pub struct AgentTraits {
     pub deferential: f32,
     pub compassionate: f32,
     pub tribal: f32,
-}
-
-impl Default for AgentTraits {
-    fn default() -> Self {
-        Self {
-            brave: 0.0,
-            cautious: 0.0,
-            aggressive: 0.0,
-            empathetic: 0.0,
-            curious: 0.0,
-            credulous: 0.0,
-            charismatic: 0.0,
-            dominant: 0.0,
-            deferential: 0.0,
-            compassionate: 0.0,
-            tribal: 0.0,
-        }
-    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
@@ -104,7 +70,7 @@ pub enum KinRelation {
     Spouse,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct Relationship {
     pub trust: f32,
     pub affection: f32,
@@ -113,19 +79,6 @@ pub struct Relationship {
     pub kin_relation: Option<KinRelation>,
     /// For attenuation — relationships decay without contact.
     pub last_interaction_tick: u64,
-}
-
-impl Default for Relationship {
-    fn default() -> Self {
-        Self {
-            trust: 0.0,
-            affection: 0.0,
-            rivalry: 0.0,
-            bond_type: BondType::default(),
-            kin_relation: None,
-            last_interaction_tick: 0,
-        }
-    }
 }
 
 /// Opaque reference into the global event log.
@@ -148,7 +101,7 @@ pub enum KnowledgeState {
     FullUnderstanding,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct BeliefEntry {
     pub concept_id: ConceptId,
     pub strength: f32,
@@ -156,18 +109,7 @@ pub struct BeliefEntry {
     pub knowledge_state: KnowledgeState,
 }
 
-impl Default for BeliefEntry {
-    fn default() -> Self {
-        Self {
-            concept_id: ConceptId::default(),
-            strength: 0.0,
-            generation_distance: 0,
-            knowledge_state: KnowledgeState::default(),
-        }
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct MemoryEntry {
     pub tick: u64,
     pub event: EventRef,
@@ -175,19 +117,8 @@ pub struct MemoryEntry {
     pub interpretation: String,
 }
 
-impl Default for MemoryEntry {
-    fn default() -> Self {
-        Self {
-            tick: 0,
-            event: EventRef::default(),
-            salience: 0.0,
-            interpretation: String::new(),
-        }
-    }
-}
-
 /// Full-fidelity named agent.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct Agent {
     pub id: AgentId,
     pub name: String,
@@ -205,23 +136,4 @@ pub struct Agent {
     pub cultural_memory: BTreeMap<ConceptId, BeliefEntry>,
     /// Per-capability mastery. `Domain` is an alias for `CapabilityId`.
     pub knowledge: BTreeMap<Domain, KnowledgeState>,
-}
-
-impl Default for Agent {
-    fn default() -> Self {
-        Self {
-            id: AgentId::default(),
-            name: String::new(),
-            age: 0.0,
-            sex: Sex::default(),
-            location: TileId::default(),
-            cohort_id: CohortId::default(),
-            needs: AgentNeeds::default(),
-            traits: AgentTraits::default(),
-            relationships: BTreeMap::new(),
-            personal_memory: Vec::new(),
-            cultural_memory: BTreeMap::new(),
-            knowledge: BTreeMap::new(),
-        }
-    }
 }

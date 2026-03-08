@@ -5,7 +5,6 @@ pub mod physical;
 pub mod state;
 pub mod tick;
 
-
 #[cfg(test)]
 mod phase2_tests {
     use std::collections::BTreeMap;
@@ -281,12 +280,11 @@ mod phase2_tests {
     #[test]
     fn agreement_status_broken_variant() {
         let s = AgreementStatus::Broken { by: CivId(2), at_tick: 50 };
-        if let AgreementStatus::Broken { by, at_tick } = s {
-            assert_eq!(by, CivId(2));
-            assert_eq!(at_tick, 50);
-        } else {
+        let AgreementStatus::Broken { by, at_tick } = s else {
             panic!("expected Broken variant");
-        }
+        };
+        assert_eq!(by, CivId(2));
+        assert_eq!(at_tick, 50);
     }
 
     #[test]
