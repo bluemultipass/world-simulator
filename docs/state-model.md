@@ -254,9 +254,11 @@ DiscoveryMechanism:
     DivineGnosis      // player-granted; bypasses prerequisites
 ```
 
-### Two DAGs, not one
+### One DAG, two node types
 
-Capabilities and concepts are separate DAGs with edges between them. Merging them into one graph would conflate doing and believing.
+Capabilities and concepts form a single DAG. Nodes are of two types — `Capability` and `Concept` — with typed edges between them. As subgraphs, capabilities-only and concepts-only are each DAGs, and the cross-type edges don't introduce cycles, so the whole graph is a DAG.
+
+They're stored in separate registries because the node types carry different fields and behave differently, not because they form separate graphs.
 
 **Capability → Concept edges** (`unlocks_concepts`): a capability's existence enables concept emergence.
 - Writing → stable theology, formal law, historical record as concept
