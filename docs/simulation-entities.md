@@ -105,6 +105,8 @@ These are all reachable from the starting graph given the right conditions — p
 
 Knowledge is a first-class entity in the simulation. It is not a technology tree — it is an epistemological state held individually and collectively, which can be correct, incorrect, or partially correct, and which updates through observation, experimentation, and cultural transmission.
 
+There is a world-level capability graph (a DAG of discovered capabilities and their prerequisites) documented in state-model.md. That graph tracks *what capabilities exist* in a civilization. This is distinct from the knowledge system, which tracks *what an individual agent epistemologically holds* about those capabilities. An agent can follow agricultural practice as ritual (`RuleWithoutUnderstanding`) while their civilization "has" agriculture. An agent can independently understand something their civilization cargo-cults. The capability graph is about world-level existence; the knowledge system is about individual epistemological state. They are different questions.
+
 ### Knowledge vs Understanding
 These are distinct states an agent can hold:
 
