@@ -16,4 +16,5 @@ A civilizational-scale world simulator with ASCII art representation. The player
 | [civilizational-scope.md](docs/civilizational-scope.md) | Capability graph, civilizational development, persistent identity |
 | [religion.md](docs/religion.md) | Religion as emergent system, generational epistemology, god discovery, dynamic theology |
 | [player-intervention.md](docs/player-intervention.md) | Intervention constraints, natural vs supernatural interventions, full catalogue with implementation tiers |
+| [state-model.md](docs/state-model.md) | Canonical data structures for world state, agents, memory, beliefs, and concept registry |
 | [open-questions.md](docs/open-questions.md) | Unresolved design questions |
