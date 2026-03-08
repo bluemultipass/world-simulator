@@ -191,6 +191,48 @@ Agent lifecycle follows human lifecycle. Named agents are born, live, age, die. 
 
 ---
 
+## Articulation Layer — Context Construction
+
+The articulation layer never receives raw simulation values. A context builder translates agent state into natural language before each LLM call. The translation is deterministic and rule-based — not LLM-generated — and can be unit tested independently.
+
+### Float → language translation
+
+Continuous values map to natural language descriptions through range bands:
+
+```
+hunger: 0.85  →  "Rowan hasn't eaten in two days and is struggling to focus"
+meaning: 0.12 →  "Rowan feels her prayers have gone unanswered; her faith is wavering"
+```
+
+Civilizational metrics work the same way. The LLM does not receive `social_scale: 0.73`. It receives what that value produces concretely: "Rowan lives in a chiefdom of ~200 people. Her leader Aldric distributes food from central stores. There are two ritual specialists." The translation layer owns this conversion; the LLM works from its output.
+
+### Prompt structure
+
+Each LLM call receives three components:
+
+**Identity context** — who this agent is: traits, cultural background, belief profile, key relationships. Stable across calls for this agent. Cacheable.
+
+**Situational snapshot** — current need levels in natural language, recent events the agent witnessed or participated in, current location and environment. Constructed fresh at call time from current agent state.
+
+**Articulation task** — what to give voice to. Always narrow and already determined by simulation logic:
+- "Rowan decided to forage rather than rest. Articulate her internal experience of that decision."
+- "Rowan is praying. Her faith is wavering and she's hungry. Generate her prayer."
+- "The player just sent rain. Rowan witnessed it. Articulate her reaction."
+
+The LLM does not choose what happens. Utility AI already chose. The LLM gives voice to a decision already made by deterministic mechanics.
+
+### Constraints
+
+**The LLM cannot contradict simulation state.** If an agent is hungry, the articulation reflects hunger. If utility AI selected foraging, the internal monologue reflects that decision. The prompt is constructed so the LLM's degree of freedom is purely stylistic and emotional texture — not factual.
+
+**Each call is a snapshot, not a session.** The LLM has no memory across calls. All context is injected fresh each time. This is what makes the async non-blocking architecture viable — calls are fully independent.
+
+**Cultural voice lives in the translation layer.** An agent whose cultural memory contains strong flood mythology will have that context injected when articulating a river event. The LLM produces something that sounds like it comes from that culture because the prompt provides the relevant beliefs. The culture is encoded in the agent layer; the LLM speaks it.
+
+**The context builder reads agent-accessible fields only — never the historical archive.** The gap between archived truth and living cultural memory is visible to the player and invisible to agents. This constraint enforces that gap mechanically.
+
+---
+
 ## Time — Variable Tick Duration
 
 Ticks are not fixed time units. Each tick represents a variable amount of world time determined by an interestingness signal. This is narrative time compression — the same pattern history uses when it records single days in exhaustive detail and summarizes centuries in a paragraph.
