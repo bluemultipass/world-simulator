@@ -166,10 +166,10 @@ Statistical only. Produces boundary events; no internal reasoning.
 | `id` | `CivId` | |
 | `label` | `String` | |
 | `population` | `u32` | |
-| `cohesion` | `f32` | Internal unity. Low cohesion → fragmentation events. |
-| `aggression` | `f32` | Disposition toward neighbors. |
-| `resource_pressure` | `f32` | Food and land stress relative to population. |
-| `capability_level` | `f32` | Rough proxy for military and economic capacity. |
+| `cohesion` | `MetricValue` | Internal unity. Falling → fragmentation events. |
+| `aggression` | `MetricValue` | Disposition toward neighbors. Rising + high resource_pressure → raids. |
+| `resource_pressure` | `MetricValue` | Food and land stress relative to population. Rising fast → imminent raid or migration. |
+| `capability_level` | `MetricValue` | Rough proxy for military and economic capacity. Rising differential → conquest risk. |
 | `dominant_belief_profile` | `BTreeMap<ConceptId, f32>` | Relevant when ideas spread across borders. |
 | `location` | `RegionId` | Approximate geographic zone. |
 
