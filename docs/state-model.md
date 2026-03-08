@@ -329,7 +329,7 @@ Values accumulate from contact events — they are not assigned. `hostility` ris
 | `hostility` | `f32` | Accumulated from raids and conflicts. Decays over time. |
 | `cooperation` | `f32` | Accumulated from trade and aid. Decays over time. |
 | `cultural_exchange` | `f32` | Degree of concept and capability transmission that has occurred. Decays slowly. Used to weight diffusion probability when contact recurs. |
-| `contact_log` | `Vec<CivContactEntry>` | Recent contact events ordered by tick. Pruned by age — entries older than a threshold are dropped once their contribution is reflected in the aggregate fields above. |
+| `contact_log` | `Vec<CivContactEntry>` | Contact events ordered by tick. Pruned by salience — low-salience entries fade; high-salience events persist indefinitely regardless of age. A devastating war from five centuries ago may still shape the relationship. |
 
 ### CivContactEntry
 
@@ -339,6 +339,7 @@ Values accumulate from contact events — they are not assigned. `hostility` ris
 | `contact_type` | `CivContactType` | What kind of interaction. |
 | `initiator` | `CivId` | Which civ initiated. |
 | `outcome` | `ContactOutcome` | `Success`, `Failure`, `Partial`. Drives how much aggregate fields shift. |
+| `salience` | `f32` | Historical weight. High-salience entries decay slower and are pruned last. A founding war or a pivotal trade alliance stays in the log indefinitely; a routine border crossing fades quickly. |
 
 ### CivContactType
 
