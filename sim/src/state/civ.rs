@@ -57,7 +57,10 @@ pub enum AgreementType {
 pub enum AgreementStatus {
     Active,
     /// Who broke it and when; informs hostility and future trust.
-    Broken { by: CivId, at_tick: u64 },
+    Broken {
+        by: CivId,
+        at_tick: u64,
+    },
     /// Lapsed without violation.
     Expired,
 }

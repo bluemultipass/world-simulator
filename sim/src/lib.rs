@@ -16,8 +16,8 @@ mod phase2_tests {
     };
     use crate::state::capabilities::{Capability, DiscoveryMechanism};
     use crate::state::civ::{
-        AgreementStatus, AgreementType, CivAgreement, CivContactEntry, CivContactType,
-        CivilizationalMetrics, CivRelation, Civilization, ContactOutcome,
+        AgreementStatus, AgreementType, CivAgreement, CivContactEntry, CivContactType, CivRelation,
+        Civilization, CivilizationalMetrics, ContactOutcome,
     };
     use crate::state::cohort::{
         AgeDistribution, Cohort, MetricField, MetricValue, NeedSatisfactionRates, PopulationState,
@@ -31,8 +31,8 @@ mod phase2_tests {
         AgentId, CapabilityId, CivId, CohortId, ConceptId, Domain, RegionId, TileId,
     };
     use crate::state::physical::{
-        ClimateState, DiseaseVector, PhysicalWorld, RegenerationRates, ResourceLevels, Tile,
-        TerrainType,
+        ClimateState, DiseaseVector, PhysicalWorld, RegenerationRates, ResourceLevels, TerrainType,
+        Tile,
     };
 
     // ── ID types ───────────────────────────────────────────────────────────────
@@ -126,7 +126,10 @@ mod phase2_tests {
 
     #[test]
     fn event_ref_constructs() {
-        let e = EventRef { tick: 5, event_id: 99 };
+        let e = EventRef {
+            tick: 5,
+            event_id: 99,
+        };
         assert_eq!(e.event_id, 99);
     }
 
@@ -145,7 +148,10 @@ mod phase2_tests {
     fn memory_entry_constructs() {
         let m = MemoryEntry {
             tick: 3,
-            event: EventRef { tick: 3, event_id: 1 },
+            event: EventRef {
+                tick: 3,
+                event_id: 1,
+            },
             salience: 0.9,
             interpretation: "it happened".to_string(),
         };
@@ -172,21 +178,45 @@ mod phase2_tests {
 
     #[test]
     fn resource_levels_constructs() {
-        let r = ResourceLevels { food: 1.0, water: 0.8, stone: 0.0, wood: 0.5, metal: 0.0 };
+        let r = ResourceLevels {
+            food: 1.0,
+            water: 0.8,
+            stone: 0.0,
+            wood: 0.5,
+            metal: 0.0,
+        };
         assert_eq!(r.food, 1.0);
     }
 
     #[test]
     fn regeneration_rates_constructs() {
-        let r = RegenerationRates { food: 0.3, water: 0.5, stone: 0.01, wood: 0.2, metal: 0.0 };
+        let r = RegenerationRates {
+            food: 0.3,
+            water: 0.5,
+            stone: 0.01,
+            wood: 0.2,
+            metal: 0.0,
+        };
         assert_eq!(r.food, 0.3);
     }
 
     #[test]
     fn physical_world_btreemap_tiles_ordered() {
         let mut w = PhysicalWorld::default();
-        w.tiles.insert(TileId(5), Tile { id: TileId(5), ..Tile::default() });
-        w.tiles.insert(TileId(1), Tile { id: TileId(1), ..Tile::default() });
+        w.tiles.insert(
+            TileId(5),
+            Tile {
+                id: TileId(5),
+                ..Tile::default()
+            },
+        );
+        w.tiles.insert(
+            TileId(1),
+            Tile {
+                id: TileId(1),
+                ..Tile::default()
+            },
+        );
         let keys: Vec<TileId> = w.tiles.keys().copied().collect();
         assert_eq!(keys, vec![TileId(1), TileId(5)]);
     }
@@ -215,13 +245,20 @@ mod phase2_tests {
 
     #[test]
     fn metric_value_constructs() {
-        let m = MetricValue { value: 0.6, velocity: 0.02 };
+        let m = MetricValue {
+            value: 0.6,
+            velocity: 0.02,
+        };
         assert_eq!(m.value, 0.6);
     }
 
     #[test]
     fn age_distribution_constructs() {
-        let a = AgeDistribution { children: 0.3, adults: 0.6, elders: 0.1 };
+        let a = AgeDistribution {
+            children: 0.3,
+            adults: 0.6,
+            elders: 0.1,
+        };
         assert!((a.children + a.adults + a.elders - 1.0).abs() < 1e-6);
     }
 
@@ -241,7 +278,10 @@ mod phase2_tests {
 
     #[test]
     fn population_state_constructs() {
-        let p = PopulationState { count: 8, growth_rate: 0.01 };
+        let p = PopulationState {
+            count: 8,
+            growth_rate: 0.01,
+        };
         assert_eq!(p.count, 8);
     }
 
@@ -279,7 +319,10 @@ mod phase2_tests {
 
     #[test]
     fn agreement_status_broken_variant() {
-        let s = AgreementStatus::Broken { by: CivId(2), at_tick: 50 };
+        let s = AgreementStatus::Broken {
+            by: CivId(2),
+            at_tick: 50,
+        };
         let AgreementStatus::Broken { by, at_tick } = s else {
             panic!("expected Broken variant");
         };
