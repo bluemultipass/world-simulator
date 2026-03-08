@@ -1,0 +1,11 @@
+{
+  "name": "world-simulator",
+  "private": true,
+  "packageManager": "pnpm@10.29.3",
+  "scripts": {
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "husky": "^9"
+  }
+}

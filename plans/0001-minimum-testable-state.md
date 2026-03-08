@@ -70,6 +70,10 @@ Scaffold the crate. No simulation logic yet.
 logic is written. Determinism and BTreeMap constraints are easier to enforce from the
 start than to retrofit.
 
+**CI:** This is the phase where `.github/workflows/ci.yml` is established. If any new
+pre-commit hooks are added (e.g. `cargo audit`, `cargo deny`, a license checker), add
+the matching step to the workflow at the same time.
+
 ---
 
 ## Phase 2 — Core data model
@@ -401,6 +405,10 @@ If these diverge, there is a non-determinism bug. Likely causes, in order of pro
 2. Floating-point operations are order-dependent — check loop bodies
 3. A system call or timestamp was used — find and remove
 4. The PRNG was advanced a different number of times — trace draw count
+
+**CI:** If property-based testing (e.g. `proptest`) or snapshot testing is introduced
+here to strengthen determinism coverage, add the required test flags or tooling to
+`.github/workflows/ci.yml` at the same time.
 
 **Tests for Phase 9:**
 - 100-tick run: two runs with seed 42 are byte-identical after serialization
