@@ -1,5 +1,47 @@
 # State Model
 
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Contents**
+
+- [WorldState](#worldstate)
+- [WorldClock](#worldclock)
+- [Agent (Tier 1)](#agent-tier-1)
+  - [Identity](#identity)
+  - [Needs](#needs)
+  - [Traits](#traits)
+  - [Relationships](#relationships)
+    - [Relationship](#relationship)
+  - [Memory](#memory)
+    - [MemoryEntry](#memoryentry)
+    - [BeliefEntry](#beliefentry)
+  - [Knowledge](#knowledge)
+- [Concept Registry](#concept-registry)
+  - [Concept](#concept)
+  - [ConceptType](#concepttype)
+  - [UtilityModifier](#utilitymodifier)
+  - [TransmissionProfile](#transmissionprofile)
+  - [EmergenceConditions](#emergenceconditions)
+- [Capability Graph](#capability-graph)
+  - [Capability](#capability)
+  - [DiscoveryMechanism](#discoverymechanism)
+  - [One DAG, two node types](#one-dag-two-node-types)
+- [Cohort](#cohort)
+- [Civilization](#civilization)
+- [CivRelation](#civrelation)
+  - [CivContactEntry](#civcontactentry)
+  - [CivAgreement](#civagreement)
+  - [CivContactType](#civcontacttype)
+  - [ContactOutcome](#contactoutcome)
+- [PhysicalWorld](#physicalworld)
+  - [Tile](#tile)
+- [CivilizationalMetrics](#civilizationalmetrics)
+  - [MetricValue](#metricvalue)
+  - [PopulationState](#populationstate)
+  - [Why velocity is load-bearing](#why-velocity-is-load-bearing)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 Concrete specification of what the simulation stores. For the conceptual design behind these fields, see [simulation-entities.md](simulation-entities.md). For how state transitions work, see [architecture.md](architecture.md).
 
 All continuous values are `f32` in `[0.0, 1.0]` unless noted. Need satisfaction values use: `0.0` = completely unmet / critical, `1.0` = fully satisfied. They decay exponentially over time; agents act to restore them.
