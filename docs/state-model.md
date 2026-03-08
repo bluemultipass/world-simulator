@@ -23,6 +23,7 @@ The top-level container. Serialized in full for save/load and determinism replay
 | `world` | `PhysicalWorld` | Terrain, climate, resources, disease. |
 | `archive` | `AgentArchive` | Immutable. Dead agents only. Nothing writes here after death. |
 | `metrics` | `CivilizationalMetrics` | Continuous values driving structural labels. |
+| `concepts` | `BTreeMap<ConceptId, Concept>` | All ideas that exist in the world. Grows as civilization develops. |
 
 ---
 
@@ -136,6 +137,86 @@ Distinct from belief. Empirically-grounded capability or causal understanding.
 | Field | Type | Notes |
 |---|---|---|
 | `knowledge` | `BTreeMap<Domain, KnowledgeState>` | Per domain: medicine, agriculture, metallurgy, etc. |
+
+---
+
+## Concept Registry
+
+`ConceptId` is used throughout the model as a key — in agent `cultural_memory`, cohort `belief_profile`, Tier 3 `dominant_belief_profile`, and agent `knowledge`. The registry is the world-level record of what each `ConceptId` actually is and what it does.
+
+The registry lives in `WorldState.concepts`. It is not pre-loaded. Concepts come into existence dynamically — through organic cultural evolution, player intervention, or cross-civilization transmission. A prehistoric band has no concept of communism; the registry entry doesn't exist yet.
+
+`Domain` (used in agent knowledge) is an alias for `ConceptId` scoped to concepts with empirical or practical content. They share the same identifier space.
+
+### Concept
+
+| Field | Type | Notes |
+|---|---|---|
+| `id` | `ConceptId` | Stable identifier. |
+| `label` | `String` | Human-readable name. e.g., "Asha", "communism", "germ theory", "cattle sacrifice taboo" |
+| `concept_type` | `ConceptType` | See below. |
+| `utility_modifiers` | `Vec<UtilityModifier>` | Behavioral effects on agents who hold this belief. |
+| `transmission` | `TransmissionProfile` | How it spreads and mutates. |
+| `emergence_conditions` | `EmergenceConditions` | What must be true for this concept to come into existence. |
+| `conflicts_with` | `Vec<ConceptId>` | Concepts this one competes with. Holding both creates tension; one tends to displace the other. |
+
+### ConceptType
+
+```
+ConceptType:
+    Deity             // a named supernatural agent; may accumulate theology
+    Ideology          // political/social/economic framework; shapes collective behavior
+    CausalModel       // a claim about how the world works; right or wrong
+    Taboo             // a behavioral prohibition; follows rule-without-understanding dynamics
+    Institution       // a formal role structure: priesthood, law, market, army
+    NaturalPhenomenon // an agentive interpretation of a natural thing: thunder-being, river spirit
+```
+
+### UtilityModifier
+
+Defines how holding a concept at a given strength modifies action utility scores. Applied during action selection for agents whose belief strength exceeds the threshold.
+
+```
+UtilityModifier {
+    action_tag:  ActionTag,  // which class of actions this affects
+    direction:   f32,        // positive = bonus, negative = penalty; magnitude scales with belief strength
+    threshold:   f32,        // minimum belief strength for this modifier to apply
+}
+```
+
+Examples for a communism-like ideology:
+- `{ action_tag: Redistribute, direction: +0.4, threshold: 0.3 }`
+- `{ action_tag: HoardResources, direction: -0.3, threshold: 0.5 }`
+- `{ action_tag: DeferToHierarchy, direction: -0.2, threshold: 0.6 }`
+
+### TransmissionProfile
+
+| Field | Type | Notes |
+|---|---|---|
+| `base_rate` | `f32` | Probability of transmission per social contact per year. |
+| `mutation_rate` | `f32` | Probability that a transmitted copy drifts from the original. |
+| `required_medium` | `TransmissionMedium` | `Oral`, `Written`, `Ritual`, `DirectObservation`. Oral is lossy; written is stable. |
+| `charisma_amplified` | `bool` | Whether high-charisma transmitters dramatically increase spread rate. |
+
+### EmergenceConditions
+
+What must be true in the world for this concept to come into existence. Checked against `CivilizationalMetrics`, existing concepts, and physical world state.
+
+```
+EmergenceConditions {
+    metric_thresholds:    Vec<(MetricField, f32)>,  // e.g., administrative_complexity > 0.6
+    required_concepts:    Vec<ConceptId>,           // prerequisite ideas that must already exist
+    population_minimum:   Option<u32>,              // some ideas require critical mass
+    player_intervention:  bool,                     // if true, can only enter via divine action
+}
+```
+
+Communism as an example — approximate emergence conditions:
+- `administrative_complexity > 0.7` — visible bureaucratic hierarchy to react against
+- `specialization_index > 0.6` — class stratification must be legible
+- `surplus_capacity > 0.5` — enough surplus that distribution is a meaningful political question
+- requires concepts: some prior notion of collective ownership or redistribution (even proto-form)
+- `population_minimum: 500` — needs enough people for political abstraction to be socially useful
 
 ---
 
