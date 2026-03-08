@@ -59,6 +59,38 @@ When enough of these cross simultaneously, an observer would call it a chiefdom.
 
 The one genuinely FSM-like structure is **simulation tier** (Tier 1 / 2 / 3). Promotion and demotion are explicit events with documented rules. But this is a fidelity routing decision — it controls how much computational attention an agent receives, not what they do.
 
+### Where complexity lives
+
+In an FSM, complexity accumulates in the state graph — states and edges grow combinatorially with the number of phenomena modeled. In this sim, that complexity shifts to three places instead:
+
+- **Action scoring curves** — what actions are available and how utility is computed for each given current need state and context. Getting the shape of these curves right is the core design work. A wrong curve is a single parameter change, not a graph restructure.
+- **Threshold conditions** — which metrics, at which values, trigger structural changes. Wrong thresholds produce observable, diagnosable failure modes.
+- **System interactions** — the feedback loops between dimensions. Disease + drought + low food utility → agents prioritize ritual over foraging → population collapses. No single rule produces this; the interaction does. This is where unpredictable but historically coherent behavior emerges.
+
+### The action library
+
+Actions are enumerated — states and transitions are not. The action library is finite at any moment but extensible and context-gated:
+
+- A prehistoric band agent has ~8 available actions. A city-state agent has ~30.
+- Actions gate on context: "pray to Asha" isn't scored until Asha exists in cultural memory; "legislate" isn't available until institutions exist.
+- Adding a new action means writing one definition with its preconditions and utility contribution. Nothing else changes.
+
+The action space expands as civilization develops, which is historically accurate, without requiring upfront anticipation of every possible human behavior.
+
+### Civilizational state as metric space
+
+The metrics that drive structural change — social_scale, administrative_complexity, territorial_coherence, specialization_index, and others — form a basis for a continuous space. Each civilization exists as a point in that space. "Band," "chiefdom," "city-state," "empire" are named regions defined by threshold hyperplanes. The label is a UI convenience; it never drives simulation logic.
+
+**Trajectories matter as much as positions.** A civilization at the same metric values can be rising or collapsing — the velocity vector is as meaningful as the location. A city-state with declining specialization and rising territorial_coherence is becoming militarized. Same label, different trajectory, different story.
+
+**The basis determines what's expressible.** A missing dimension means two civilizations that should be distinguishable look identical to the sim. Choosing the right metrics is the core design work — it is literally choosing what the simulation can perceive and model.
+
+**Non-Western forms emerge without special casing.** Polynesian chiefdoms, Andean empires, stateless pastoral confederacies don't require their own types. If the metrics are well-chosen, they occupy distinct regions naturally. The model isn't culturally prescriptive; the labels carry cultural baggage, not the underlying space.
+
+**The interesting dynamics are nonlinear.** Dimensions that amplify each other (specialization enables surplus, surplus enables specialization), dimensions that trade off under stress, collapse trajectories that look different from growth trajectories in the same region. These feedback loops produce the sim's character.
+
+The dimensions are not orthogonal — they interact, which is the source of emergent behavior. But as a mental model: the sim constructs a basis and populates it with dynamics, not a graph of outcomes.
+
 ---
 
 ## World Structure
