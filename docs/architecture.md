@@ -16,6 +16,51 @@ Gives voice to what agents experience and decide. Internal monologue, prayer gen
 
 ---
 
+## State Transition Model
+
+World state is a vector of values — agent needs, relationships, resource levels, cultural memory weights, population counts, belief strengths, PRNG state. The state space is not a finite enumerable set. **The simulation is not a finite state machine.** Enumerating all possible states and transitions across hundreds of agents with continuous-valued attributes is not tractable and is not the right frame.
+
+Transitions follow the form:
+
+```
+W(t + Δt) = F(W(t), Δt)
+```
+
+`F` is a pipeline of pure update functions applied in order each tick, each computing a partial delta to state. Closer in structure to a physics simulation or system of difference equations than to a state graph.
+
+### The tick pipeline
+
+1. **Physical update** — climate step, resource regeneration, disease spread
+2. **Need decay** — exponential decay per agent per need over Δt
+3. **Action selection** — utility scoring over available actions, pick highest
+4. **Action execution** — resource consumption, memory formation, relationship updates
+5. **Cultural transmission** — belief propagation with decay and mutation
+6. **Threshold evaluation** — check continuous values against structural thresholds
+7. **Archival** — dead agents written to history, removed from active state
+
+Steps 1–5 are continuous delta computation. Step 6 is where qualitative structure changes.
+
+### Agent action selection: utility AI, not FSM
+
+Individual agents do not transition between explicit behavioral states via a graph. They score every available action against their current need state and context, then pick the highest. An agent does not transition `HUNGRY → FORAGING` via an explicit rule — it scores *forage* against *rest* against *socialize* given need levels and picks the winner. Apparent behavioral state emerges from utility scores. Deterministic given the same world state.
+
+### Qualitative civilizational transitions are emergent threshold effects
+
+Band becoming chiefdom, animism becoming institutionalized religion, kinship economy developing markets — none of these are explicitly modeled transitions. There is no edge in a graph labeled "band → chiefdom."
+
+Instead, continuous metrics cross thresholds simultaneously:
+- **Leadership concentration** — one agent consistently winning high-stakes utility decisions affecting others
+- **Ritual specialization** — one agent spending disproportionate time on meaning-need activities
+- **Resource redistribution** — consistent resource flow through a single node in the relationship graph
+
+When enough of these cross simultaneously, an observer would call it a chiefdom. The simulation does not make that call — it updates continuous values. The label is analytical, not mechanical. The same pattern applies to religious institutions, markets, and political structures. This is design principle 3 (emergent over designed) expressed mechanically.
+
+### Where discrete states do exist
+
+The one genuinely FSM-like structure is **simulation tier** (Tier 1 / 2 / 3). Promotion and demotion are explicit events with documented rules. But this is a fidelity routing decision — it controls how much computational attention an agent receives, not what they do.
+
+---
+
 ## World Structure
 
 ### Three-tier fidelity model
