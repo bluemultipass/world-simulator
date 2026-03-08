@@ -23,8 +23,8 @@ The top-level container. Serialized in full for save/load and determinism replay
 | `world` | `PhysicalWorld` | Terrain, climate, resources, disease. |
 | `archive` | `AgentArchive` | Immutable. Dead agents only. Nothing writes here after death. |
 | `metrics` | `CivilizationalMetrics` | Continuous values driving structural labels. |
-| `concepts` | `BTreeMap<ConceptId, Concept>` | All ideas that exist in the world. Grows as civilization develops. |
-| `capabilities` | `BTreeMap<CapabilityId, Capability>` | All capabilities that have been discovered. The world-level capability DAG. |
+| `concepts` | `BTreeMap<ConceptId, Concept>` | Definition registry for all concepts that exist anywhere in the simulation. |
+| `capabilities` | `BTreeMap<CapabilityId, Capability>` | Definition registry for all capabilities that have been discovered anywhere. |
 
 ---
 
@@ -145,7 +145,9 @@ Distinct from belief. Empirically-grounded capability or causal understanding.
 
 `ConceptId` is used throughout the model as a key — in agent `cultural_memory`, cohort `belief_profile`, Tier 3 `dominant_belief_profile`, and agent `knowledge`. The registry is the world-level record of what each `ConceptId` actually is and what it does.
 
-The registry lives in `WorldState.concepts`. It is not pre-loaded. Concepts come into existence dynamically — through organic cultural evolution, player intervention, or cross-civilization transmission. A prehistoric band has no concept of communism; the registry entry doesn't exist yet.
+The registry lives in `WorldState.concepts`. It contains **definitions only** — what a concept is, what it does, how it spreads. It does not track who holds what. Whether a specific agent or civilization holds a concept is tracked in agent `cultural_memory` and cohort `belief_profile`.
+
+The registry is not pre-loaded. Concepts come into existence dynamically — through organic cultural evolution, player intervention, or cross-civilization transmission. A prehistoric band has no concept of communism; the registry entry doesn't exist yet.
 
 `Domain` (used in agent knowledge) is an alias for `CapabilityId`. Agent knowledge tracks mastery of capabilities, not general beliefs — those live in `cultural_memory`.
 
@@ -201,7 +203,7 @@ Examples for a communism-like ideology:
 
 ### EmergenceConditions
 
-What must be true in the world for this concept to come into existence. Checked against `CivilizationalMetrics`, existing concepts, and physical world state.
+What must be true **in the local civilization** for this concept to come into existence. Always checked against the specific civilization's state — not global. A concept existing in one civilization does not make it available in another; it must be transmitted explicitly or discovered independently.
 
 ```
 EmergenceConditions {
@@ -223,9 +225,11 @@ Communism as an example — approximate emergence conditions:
 
 ## Capability Graph
 
-The world-level registry of capabilities that have been discovered. Lives in `WorldState.capabilities`. Like the concept registry, it is not pre-loaded — capabilities come into existence when discovered, transmitted, or divinely granted.
+The world-level definition registry for capabilities. Lives in `WorldState.capabilities`. Contains **definitions only** — prerequisites, effects, discovery mechanisms. Does not track who has what.
 
-`Domain` in agent knowledge is an alias for `CapabilityId`. An agent's `KnowledgeState` for a given capability represents their individual mastery of it.
+Whether a capability is held by a specific agent is tracked in `Agent.knowledge`. Whether a cohort collectively holds it is tracked in `Cohort.capability_profile`. Prerequisite checks for emergence are always against the **local civilization's** state — a capability existing in one civilization does not make it available in another.
+
+`Domain` in agent knowledge is an alias for `CapabilityId`. An agent's `KnowledgeState` for a given capability represents their individual mastery of it, independent of what the world registry says.
 
 ### Capability
 
@@ -281,6 +285,7 @@ Population group simulated at aggregate level. Not individual agents.
 | `need_satisfaction` | `NeedSatisfactionRates` | Aggregate satisfaction rates per need. |
 | `trait_distribution` | `TraitDistribution` | Mean and variance per trait across cohort. |
 | `belief_profile` | `BTreeMap<ConceptId, f32>` | Aggregate belief strength per concept. |
+| `capability_profile` | `BTreeMap<CapabilityId, f32>` | Aggregate mastery level per capability across the cohort. |
 | `location` | `TileId` | Centroid or primary tile. |
 | `affiliation` | `Option<AgentId>` | Named leader if one has emerged. |
 
