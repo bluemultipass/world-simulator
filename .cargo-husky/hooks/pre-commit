@@ -1,0 +1,10 @@
+#!/bin/sh
+set -e
+
+cd "$(git rev-parse --show-toplevel)/sim"
+
+echo '+cargo fmt -- --check'
+cargo fmt -- --check
+
+echo '+cargo clippy -- -D warnings'
+cargo clippy -- -D warnings
