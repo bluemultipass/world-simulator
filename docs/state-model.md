@@ -147,7 +147,7 @@ Population group simulated at aggregate level. Not individual agents.
 |---|---|---|
 | `id` | `CohortId` | |
 | `label` | `String` | e.g., "Rowan's tribe — non-named members" |
-| `population` | `u32` | Headcount. |
+| `population` | `PopulationState` | Headcount with growth rate. |
 | `age_distribution` | `AgeDistribution` | Rough breakdown: children, adults, elders. |
 | `need_satisfaction` | `NeedSatisfactionRates` | Aggregate satisfaction rates per need. |
 | `trait_distribution` | `TraitDistribution` | Mean and variance per trait across cohort. |
@@ -165,7 +165,7 @@ Statistical only. Produces boundary events; no internal reasoning.
 |---|---|---|
 | `id` | `CivId` | |
 | `label` | `String` | |
-| `population` | `u32` | |
+| `population` | `PopulationState` | Headcount with growth rate. |
 | `cohesion` | `MetricValue` | Internal unity. Falling → fragmentation events. |
 | `aggression` | `MetricValue` | Disposition toward neighbors. Rising + high resource_pressure → raids. |
 | `resource_pressure` | `MetricValue` | Food and land stress relative to population. Rising fast → imminent raid or migration. |
@@ -221,6 +221,19 @@ MetricValue {
     velocity: f32,   // smoothed rate of change, per year; negative = declining
 }
 ```
+
+### PopulationState
+
+Used where population is a raw count rather than a normalized value, so `MetricValue` doesn't apply directly.
+
+```
+PopulationState {
+    count:       u32,   // current headcount
+    growth_rate: f32,   // smoothed fractional change per year; -0.03 = 3% annual decline
+}
+```
+
+`growth_rate` is updated with the same EMA formula as `MetricValue.velocity`, using `(new_count - old_count) / (old_count * delta_t)` as the raw per-tick signal. Expressing it as a fraction keeps it comparable across groups of very different sizes.
 
 Velocity is updated each tick using an exponential moving average to smooth out variable tick lengths:
 
