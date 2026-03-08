@@ -92,12 +92,17 @@ fn build_tiles() -> BTreeMap<TileId, Tile> {
                 )
             };
 
+            // resource_max mirrors the starting resource levels — tiles begin at their
+            // terrain-determined ceiling and regenerate back to it after extraction.
+            let resource_max = resources.clone();
+
             tiles.insert(
                 id,
                 Tile {
                     id,
                     terrain,
                     elevation,
+                    resource_max,
                     resources,
                     resource_regeneration: regen,
                     carrying_capacity,

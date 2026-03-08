@@ -45,6 +45,8 @@ pub struct Tile {
     pub elevation: f32,
     pub resources: ResourceLevels,
     pub resource_regeneration: RegenerationRates,
+    /// Terrain-determined ceiling for each resource. Regeneration never pushes levels above these.
+    pub resource_max: ResourceLevels,
     /// Max sustainable population given current resources and tech.
     pub carrying_capacity: u32,
 }
