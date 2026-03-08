@@ -17,12 +17,12 @@ The top-level container. Serialized in full for save/load and determinism replay
 | `seed` | `u64` | Original PRNG seed. Serialized with state. |
 | `rng` | `ChaChaRng` | Current PRNG state. Deterministic. |
 | `clock` | `WorldClock` | Current time and tick count. |
-| `agents` | `BTreeMap<AgentId, Agent>` | Active Tier 1 named agents. |
-| `cohorts` | `BTreeMap<CohortId, Cohort>` | Tier 2 population cohorts. |
-| `civilizations` | `BTreeMap<CivId, Civilization>` | Tier 3 statistical civilizations. |
+| `agents` | `BTreeMap<AgentId, Agent>` | Active named agents with individual tracking. |
+| `cohorts` | `BTreeMap<CohortId, Cohort>` | All cohorts at variable fidelity. Focus civ and related civs run full pipeline; distant civs run sparse pipeline. Same type, different depth. |
+| `civilizations` | `BTreeMap<CivId, Civilization>` | All civilizations including the focus civ. Each holds a `CohortId` reference and its own `CivilizationalMetrics`. |
+| `focus_civ_id` | `CivId` | Which civilization is the player's. |
 | `world` | `PhysicalWorld` | Terrain, climate, resources, disease. |
 | `archive` | `AgentArchive` | Immutable. Dead agents only. Nothing writes here after death. |
-| `metrics` | `CivilizationalMetrics` | Continuous values driving structural labels. |
 | `concepts` | `BTreeMap<ConceptId, Concept>` | Definition registry for all concepts that exist anywhere in the simulation. |
 | `capabilities` | `BTreeMap<CapabilityId, Capability>` | Definition registry for all capabilities that have been discovered anywhere. |
 
@@ -274,40 +274,44 @@ They're stored in separate registries because the node types carry different fie
 
 ---
 
-## Cohort (Tier 2)
+## Cohort
 
 Represents the full population of a group — named agents included. Named agents who belong to this cohort have individual `Agent` records and are simulated at full fidelity; their states contribute to the cohort's aggregate fields each tick. Everyone else is simulated only at the aggregate level. `population.count` covers everyone.
+
+The same struct is used for all cohorts. **Pipeline depth varies by fidelity level.** A cohort for the focus civilization or a group in direct contact runs the full tick pipeline. A cohort for a distant civilization with no relationship to the focus runs only the sparse pipeline — population dynamics, resource pressure, event threshold checks. The rich aggregate fields are empty for sparse cohorts and populated as a group becomes relevant.
+
+**Warming up a sparse cohort:** when a distant civilization makes contact, its cohort's rich fields are populated by sampling from the sparse summary fields (`cohesion`, `resource_pressure`, `capability_level`) to generate plausible initial distributions. From that point forward, it runs the full pipeline.
 
 | Field | Type | Notes |
 |---|---|---|
 | `id` | `CohortId` | |
 | `label` | `String` | e.g., "Rowan's tribe" |
-| `population` | `PopulationState` | Total headcount including individually-tracked members. |
-| `age_distribution` | `AgeDistribution` | Rough breakdown: children, adults, elders. |
-| `need_satisfaction` | `NeedSatisfactionRates` | Aggregate satisfaction rates per need. |
-| `trait_distribution` | `TraitDistribution` | Mean and variance per trait across cohort. |
-| `belief_profile` | `BTreeMap<ConceptId, f32>` | Aggregate belief strength per concept. |
-| `capability_profile` | `BTreeMap<CapabilityId, f32>` | Aggregate mastery level per capability across the cohort. |
+| `population` | `PopulationState` | Total headcount including individually-tracked members. All cohorts. |
+| `cohesion` | `MetricValue` | Internal unity. Falling → fragmentation events. All cohorts. |
+| `resource_pressure` | `MetricValue` | Food and land stress relative to population. All cohorts. |
+| `capability_level` | `MetricValue` | Rough proxy for military and economic capacity relative to neighbors. All cohorts. |
+| `age_distribution` | `Option<AgeDistribution>` | Rough breakdown: children, adults, elders. Full-pipeline only. |
+| `need_satisfaction` | `Option<NeedSatisfactionRates>` | Aggregate satisfaction rates per need. Full-pipeline only. |
+| `trait_distribution` | `Option<TraitDistribution>` | Mean and variance per trait across cohort. Full-pipeline only. |
+| `belief_profile` | `BTreeMap<ConceptId, f32>` | Aggregate belief strength per concept. Sparse for distant civs; full for related ones. |
+| `capability_profile` | `BTreeMap<CapabilityId, f32>` | Aggregate mastery level per capability. Sparse for distant civs; full for related ones. |
 | `location` | `TileId` | Centroid or primary tile. |
-| `affiliation` | `Option<AgentId>` | Named leader if one has emerged. |
+| `affiliation` | `Option<AgentId>` | Named leader if one has emerged. Full-pipeline only. |
 
 ---
 
-## Civilization (Tier 3)
+## Civilization
 
-Statistical only. Produces boundary events; no internal reasoning.
+Every civilization — including the focus civilization — has a `Civilization` record paired with a `Cohort`. The `Civilization` record holds identity and civilizational-level metrics. The `Cohort` holds population and demographic state.
 
 | Field | Type | Notes |
 |---|---|---|
 | `id` | `CivId` | |
 | `label` | `String` | |
-| `population` | `PopulationState` | Headcount with growth rate. |
-| `cohesion` | `MetricValue` | Internal unity. Falling → fragmentation events. |
-| `aggression` | `MetricValue` | Disposition toward neighbors. Rising + high resource_pressure → raids. |
-| `resource_pressure` | `MetricValue` | Food and land stress relative to population. Rising fast → imminent raid or migration. |
-| `capability_level` | `MetricValue` | Rough proxy for military and economic capacity. Rising differential → conquest risk. |
-| `dominant_belief_profile` | `BTreeMap<ConceptId, f32>` | Relevant when ideas spread across borders. |
-| `location` | `RegionId` | Approximate geographic zone. |
+| `cohort_id` | `CohortId` | The associated cohort. |
+| `location` | `RegionId` | Approximate geographic zone. More precise location is on the Cohort. |
+| `aggression` | `MetricValue` | Disposition toward neighbors. Rising + high `resource_pressure` → raids. |
+| `metrics` | `CivilizationalMetrics` | Detailed structural metrics. Fully populated for focus civ and related civs; sparse for distant civs. |
 
 ---
 
@@ -333,6 +337,8 @@ Statistical only. Produces boundary events; no internal reasoning.
 ---
 
 ## CivilizationalMetrics
+
+Lives on `Civilization.metrics`, not on `WorldState` directly. Every civilization has a `CivilizationalMetrics` struct; for distant civs most fields start at zero and are updated sparsely. For the focus civilization and groups in direct contact, all fields are tracked and updated each tick.
 
 Continuous values that drive structural labels and threshold effects. Labels ("band", "chiefdom", "city-state") are derived analytically from these — they never drive simulation logic directly.
 

@@ -102,24 +102,20 @@ Full simulation. Rich structs, memory, relationships, knowledge graphs, cultural
 
 Individual tracking is not tribal — it is relational. An agent is tracked individually because they matter to the story regardless of which group they belong to. Group affiliation is a property of the agent, not a criterion for individual tracking.
 
-**Tier 2 — Population cohorts**
-The focus civilization and any group with meaningful relationship to it, modeled as cohorts. A cohort represents the full population of a group — named agents included. Aggregate fields (trait distributions, need satisfaction rates, belief profiles, capability profiles) reflect everyone. Named members contribute their individual state to these aggregates each tick. Scales naturally as the focus group grows — a city of ten thousand does not need ten thousand Agent records; it needs a Tier 2 cohort and a named cast of ~30-80 individuals tracked at full fidelity.
+**Tier 2 — Full-pipeline cohorts**
+The focus civilization and any group with meaningful relationship to it. A cohort represents the full population of a group — named agents included. All aggregate fields are populated and updated each tick: trait distributions, need satisfaction rates, belief profiles, capability profiles. Named members contribute their individual state to these aggregates each tick. Scales naturally as the focus group grows — a city of ten thousand does not need ten thousand Agent records; it needs a full-pipeline cohort and a named cast of ~30-80 individuals tracked at full fidelity.
 
-**Tier 3 — Statistical civilizations**
-Foreign groups with no direct relationship to the focus civilization. Pure statistics evolving by simple deterministic rules. Produce boundary events only.
+**Tier 3 — Sparse-pipeline cohorts**
+Foreign groups with no direct relationship to the focus civilization. **Same `Cohort` type as Tier 2 — different pipeline depth, not a different struct.** Each tick, only the sparse pipeline runs: population dynamics, resource pressure, aggression update, event threshold checks. Rich aggregate fields (trait distributions, need satisfaction, capability profiles) are empty. The belief profile contains only dominant beliefs sparse enough to drive border-crossing transmission.
 
-Each Tier 3 civilization tracks:
-- **Population** — size and growth rate
-- **Cohesion** — internal unity, resistance to fragmentation
-- **Aggression** — disposition toward neighbors
-- **Resource pressure** — food and land stress relative to population
-- **Capability level** — rough proxy for military and economic capacity
-- **Dominant belief profile** — relevant when ideas cross borders
+This is a routing decision, not a type distinction. When a distant civilization makes contact, its cohort warms up: rich fields are populated by sampling from the summary stats already present, and it begins running the full pipeline. No migration, no struct change — just filling in previously empty fields and increasing pipeline depth.
 
 High resource pressure plus high aggression produces raid events. Population growth past carrying capacity produces migration. Large capability differential plus aggression produces conquest attempts.
 
+Every civilization — including the focus civilization — has both a `Civilization` record and a `Cohort`. The fidelity tier is a property of how much computation the cohort receives each tick, not of what type it is.
+
 ### Translation layer
-Statistical boundary events are converted into narrative events that Tier 1 and Tier 2 agents can reason about. "Eastern group aggression crossed threshold and resource pressure is critical" becomes agents hearing rumors, scouts reporting strangers, fear spreading. The focus tribe responds with full fidelity to real external pressure.
+Sparse-pipeline boundary events are converted into narrative events that named agents and full-pipeline cohorts can reason about. "Eastern group aggression crossed threshold and resource pressure is critical" becomes agents hearing rumors, scouts reporting strangers, fear spreading. The focus tribe responds with full fidelity to real external pressure.
 
 ---
 
