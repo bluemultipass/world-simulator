@@ -5,6 +5,8 @@ pub mod physical;
 pub mod state;
 pub mod tick;
 
+pub use genesis::genesis;
+
 #[cfg(test)]
 mod phase2_tests {
     use std::collections::BTreeMap;
@@ -451,5 +453,143 @@ mod phase2_tests {
     fn region_id_usable_as_field() {
         let _r = RegionId(7);
         let _cohort_id = CohortId(1);
+    }
+}
+
+#[cfg(test)]
+mod phase3_tests {
+    use crate::genesis;
+
+    #[test]
+    fn genesis_completes_without_panic() {
+        let _ = genesis(42);
+    }
+
+    #[test]
+    fn genesis_same_seed_identical_output() {
+        let a = genesis(42);
+        let b = genesis(42);
+        let json_a = serde_json::to_string(&a).unwrap();
+        let json_b = serde_json::to_string(&b).unwrap();
+        assert_eq!(json_a, json_b);
+    }
+
+    #[test]
+    fn genesis_different_seeds_diverge() {
+        let a = genesis(42);
+        let b = genesis(43);
+        // Trait values must differ between seeds.
+        let traits_a: Vec<f32> = a.agents.values().map(|ag| ag.traits.brave).collect();
+        let traits_b: Vec<f32> = b.agents.values().map(|ag| ag.traits.brave).collect();
+        assert_ne!(
+            traits_a, traits_b,
+            "seeds 42 and 43 should produce different trait values"
+        );
+    }
+
+    #[test]
+    fn all_agents_reference_valid_cohort() {
+        let world = genesis(42);
+        for (id, agent) in &world.agents {
+            assert!(
+                world.cohorts.contains_key(&agent.cohort_id),
+                "agent {id:?} references missing cohort {:?}",
+                agent.cohort_id
+            );
+        }
+    }
+
+    #[test]
+    fn agent_count_matches_cohort_population() {
+        let world = genesis(42);
+        let agent_count = world.agents.len() as u32;
+        for cohort in world.cohorts.values() {
+            assert_eq!(
+                cohort.population.count, agent_count,
+                "cohort population.count {} != agent count {}",
+                cohort.population.count, agent_count
+            );
+        }
+    }
+
+    #[test]
+    fn tile_grid_has_25_tiles() {
+        let world = genesis(42);
+        assert_eq!(world.world.tiles.len(), 25);
+    }
+
+    #[test]
+    fn tile_ids_are_1_through_25() {
+        use crate::state::ids::TileId;
+        let world = genesis(42);
+        let ids: Vec<TileId> = world.world.tiles.keys().copied().collect();
+        let expected: Vec<TileId> = (1..=25).map(TileId).collect();
+        assert_eq!(ids, expected);
+    }
+
+    #[test]
+    fn central_tiles_are_grassland() {
+        use crate::state::ids::TileId;
+        use crate::state::physical::TerrainType;
+        let world = genesis(42);
+        // Central 3×3: tile ids 7,8,9, 12,13,14, 17,18,19
+        for &id in &[7u64, 8, 9, 12, 13, 14, 17, 18, 19] {
+            let tile = world.world.tiles.get(&TileId(id)).unwrap();
+            assert!(
+                matches!(tile.terrain, TerrainType::Grassland),
+                "tile {id} should be Grassland"
+            );
+        }
+    }
+
+    #[test]
+    fn all_agents_start_at_central_tile() {
+        use crate::state::ids::TileId;
+        let world = genesis(42);
+        for (id, agent) in &world.agents {
+            assert_eq!(
+                agent.location,
+                TileId(13),
+                "agent {id:?} should start on central tile"
+            );
+        }
+    }
+
+    #[test]
+    fn all_agent_needs_initialised_at_0_9() {
+        let world = genesis(42);
+        for (id, agent) in &world.agents {
+            let n = &agent.needs;
+            for &v in &[
+                n.food,
+                n.water,
+                n.sleep,
+                n.shelter,
+                n.warmth,
+                n.safety,
+                n.belonging,
+                n.status,
+                n.meaning,
+            ] {
+                assert!(
+                    (v - 0.9).abs() < 1e-6,
+                    "agent {id:?} need should be 0.9, got {v}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn clock_initialised_correctly() {
+        let world = genesis(42);
+        assert_eq!(world.clock.year, -300_000);
+        assert_eq!(world.clock.tick, 0);
+        assert_eq!(world.clock.last_delta, 0.0);
+    }
+
+    #[test]
+    fn seed_stored_in_world_state() {
+        let world = genesis(42);
+        assert_eq!(world.seed, 42);
     }
 }
