@@ -51,7 +51,7 @@ Full-fidelity named agent.
 | `age` | `f32` | Years. |
 | `sex` | `Sex` | Biological sex. Affects reproduction only. |
 | `location` | `TileId` | Current position in physical world. |
-| `tier` | `SimTier` | `Tier1` always for active named agents. |
+| `cohort_id` | `CohortId` | The cohort this agent belongs to. They are a member of that population; individual tracking is the only thing that distinguishes them from unnamed members. |
 
 ### Needs
 
@@ -276,13 +276,13 @@ They're stored in separate registries because the node types carry different fie
 
 ## Cohort (Tier 2)
 
-Population group simulated at aggregate level. Not individual agents.
+Represents the full population of a group — named agents included. Named agents who belong to this cohort have individual `Agent` records and are simulated at full fidelity; their states contribute to the cohort's aggregate fields each tick. Everyone else is simulated only at the aggregate level. `population.count` covers everyone.
 
 | Field | Type | Notes |
 |---|---|---|
 | `id` | `CohortId` | |
-| `label` | `String` | e.g., "Rowan's tribe — non-named members" |
-| `population` | `PopulationState` | Headcount with growth rate. |
+| `label` | `String` | e.g., "Rowan's tribe" |
+| `population` | `PopulationState` | Total headcount including individually-tracked members. |
 | `age_distribution` | `AgeDistribution` | Rough breakdown: children, adults, elders. |
 | `need_satisfaction` | `NeedSatisfactionRates` | Aggregate satisfaction rates per need. |
 | `trait_distribution` | `TraitDistribution` | Mean and variance per trait across cohort. |

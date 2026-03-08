@@ -97,13 +97,13 @@ The dimensions are not orthogonal — they interact, which is the source of emer
 
 ### Three-tier fidelity model
 
-**Tier 1 — Named agents**
-Full simulation. Rich structs, memory, relationships, knowledge graphs, cultural memory, individual reasoning, articulation layer active. These are the individuals the player knows by name. The pool is demand-driven up to a performance ceiling — not a fixed number. Early prehistoric band may have 8-12. A city-state may have 50-80. A nation at peak may have 150-200, most inactive at any given time.
+**Tier 1 — Individually tracked members**
+Full simulation. Rich structs, memory, relationships, knowledge graphs, cultural memory, individual reasoning, articulation layer active. These are the individuals the player knows by name. They are members of a cohort — the cohort's aggregate stats include their states. The only thing that distinguishes them from unnamed members is that they are tracked individually. The pool is demand-driven up to a performance ceiling — not a fixed number. Early prehistoric band may have 8-12. A city-state may have 50-80. A nation at peak may have 150-200, most inactive at any given time.
 
-Named agent pool membership is not tribal — it is relational. An agent enters the pool because they matter to the story regardless of which group they belong to. Tribal affiliation is a property of the agent, not a criterion for simulation tier.
+Individual tracking is not tribal — it is relational. An agent is tracked individually because they matter to the story regardless of which group they belong to. Group affiliation is a property of the agent, not a criterion for individual tracking.
 
-**Tier 2 — Population simulation**
-The broader focus civilization and any group with meaningful relationship to it. Not individual agents but not pure statistics. Modeled as cohorts with aggregate trait distributions, population dynamics, need satisfaction rates, belief profiles. Produces emergent events and realistic pressure on Tier 1 agents. Scales naturally as the focus group grows from tribe to city to nation — a city of ten thousand does not need ten thousand agents, it needs a Tier 2 cohort and a named cast of ~30-80 individuals who matter.
+**Tier 2 — Population cohorts**
+The focus civilization and any group with meaningful relationship to it, modeled as cohorts. A cohort represents the full population of a group — named agents included. Aggregate fields (trait distributions, need satisfaction rates, belief profiles, capability profiles) reflect everyone. Named members contribute their individual state to these aggregates each tick. Scales naturally as the focus group grows — a city of ten thousand does not need ten thousand Agent records; it needs a Tier 2 cohort and a named cast of ~30-80 individuals tracked at full fidelity.
 
 **Tier 3 — Statistical civilizations**
 Foreign groups with no direct relationship to the focus civilization. Pure statistics evolving by simple deterministic rules. Produce boundary events only.
@@ -170,14 +170,16 @@ A tick spanning 10 years may cross a threshold (epidemic onset, faith collapse, 
 
 ## Named Agent Lifecycle
 
-Agent lifecycle follows human lifecycle. Named agents are born, live, age, die. Simulation tier changes based on relevance during their life. After death they become history.
+Agent lifecycle follows human lifecycle. Named agents are born, live, age, die. Whether they receive individual tracking changes based on relevance during their life. After death they become history.
 
-**Promotion to Tier 1** — conditions include:
+**Promotion to individual tracking** — a cohort member gets an `Agent` record instantiated for them. The cohort's population count does not change — they were already in it. Their initial individual state is sampled from the cohort's trait and belief distributions. Conditions that trigger promotion:
 - Role emergence — a new important social role forms and needs filling
 - Threshold events — an agent does something significant enough to warrant individual tracking
 - Player interest — player asks about or focuses on a specific person
 - Proximity — close relationship with an existing named agent
 - Relational significance — a foreign figure whose individual state materially affects the focus tribe's story
+
+**Demotion from individual tracking** — the `Agent` record is dissolved. Their final state is folded back as adjustments to the cohort's aggregate distributions. The cohort's population count does not change. Used when a named agent becomes narratively irrelevant (not the same as death).
 
 **Foreign named agents** fall into two cases:
 - **Persistent** — figures who matter to the focus tribe's story over a long period. A rival king, a foreign prophet whose theology is spreading. Full Tier 1 treatment for the duration of their life.
