@@ -24,6 +24,7 @@ The top-level container. Serialized in full for save/load and determinism replay
 | `archive` | `AgentArchive` | Immutable. Dead agents only. Nothing writes here after death. |
 | `metrics` | `CivilizationalMetrics` | Continuous values driving structural labels. |
 | `concepts` | `BTreeMap<ConceptId, Concept>` | All ideas that exist in the world. Grows as civilization develops. |
+| `capabilities` | `BTreeMap<CapabilityId, Capability>` | All capabilities that have been discovered. The world-level capability DAG. |
 
 ---
 
@@ -146,7 +147,7 @@ Distinct from belief. Empirically-grounded capability or causal understanding.
 
 The registry lives in `WorldState.concepts`. It is not pre-loaded. Concepts come into existence dynamically — through organic cultural evolution, player intervention, or cross-civilization transmission. A prehistoric band has no concept of communism; the registry entry doesn't exist yet.
 
-`Domain` (used in agent knowledge) is an alias for `ConceptId` scoped to concepts with empirical or practical content. They share the same identifier space.
+`Domain` (used in agent knowledge) is an alias for `CapabilityId`. Agent knowledge tracks mastery of capabilities, not general beliefs — those live in `cultural_memory`.
 
 ### Concept
 
@@ -217,6 +218,53 @@ Communism as an example — approximate emergence conditions:
 - `surplus_capacity > 0.5` — enough surplus that distribution is a meaningful political question
 - requires concepts: some prior notion of collective ownership or redistribution (even proto-form)
 - `population_minimum: 500` — needs enough people for political abstraction to be socially useful
+
+---
+
+## Capability Graph
+
+The world-level registry of capabilities that have been discovered. Lives in `WorldState.capabilities`. Like the concept registry, it is not pre-loaded — capabilities come into existence when discovered, transmitted, or divinely granted.
+
+`Domain` in agent knowledge is an alias for `CapabilityId`. An agent's `KnowledgeState` for a given capability represents their individual mastery of it.
+
+### Capability
+
+| Field | Type | Notes |
+|---|---|---|
+| `id` | `CapabilityId` | Stable identifier. |
+| `label` | `String` | e.g., "fire_starting", "agriculture", "iron_smelting", "writing" |
+| `prerequisite_capabilities` | `Vec<CapabilityId>` | Must be discovered before this one is possible. |
+| `prerequisite_concepts` | `Vec<ConceptId>` | Concepts that must exist before this can emerge. |
+| `metric_thresholds` | `Vec<(MetricField, f32)>` | Civilizational conditions required. |
+| `unlocked_actions` | `Vec<ActionTag>` | Actions that become available once this capability exists in the world. |
+| `unlocks_concepts` | `Vec<ConceptId>` | Concepts that can now emerge once this capability exists. |
+| `discovery_mechanism` | `DiscoveryMechanism` | How it enters the world. |
+
+### DiscoveryMechanism
+
+```
+DiscoveryMechanism:
+    Observation       // agents discover it by observing the physical world
+    TrialAndError     // probabilistic discovery through repeated relevant action
+    Transmission      // received from another civilization
+    DivineGnosis      // player-granted; bypasses prerequisites
+```
+
+### Two DAGs, not one
+
+Capabilities and concepts are separate DAGs with edges between them. Merging them into one graph would conflate doing and believing.
+
+**Capability → Concept edges** (`unlocks_concepts`): a capability's existence enables concept emergence.
+- Writing → stable theology, formal law, historical record as concept
+- Iron smelting → warrior-caste ideology, imperial ambition as accessible concepts
+- Surplus agriculture → property ownership, debt, redistribution ideology
+
+**Concept → Capability edges** (`prerequisite_concepts`): a concept must exist for a capability to emerge.
+- A deity of the forge may be required for iron smelting in some cultures (not universally — this is configurable per world)
+- Formal measurement concepts may be required for advanced architecture
+- A taboo can function as a negative prerequisite — blocking capability development even when physical conditions are met
+
+**Both reference `ActionTag`**: capabilities unlock actions; concept `UtilityModifier`s change their utility. The same action can be enabled by a capability and amplified or suppressed by a belief. These work independently and compose.
 
 ---
 
