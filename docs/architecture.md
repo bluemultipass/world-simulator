@@ -57,7 +57,7 @@ When enough of these cross simultaneously, an observer would call it a chiefdom.
 
 ### Where discrete states do exist
 
-The one genuinely FSM-like structure is **simulation tier** (Tier 1 / 2 / 3). Promotion and demotion are explicit events with documented rules. But this is a fidelity routing decision — it controls how much computational attention an agent receives, not what they do.
+The one genuinely FSM-like structure is **simulation tier** (Tier 1 / 2). Promotion and demotion are explicit events with documented rules. But this is a fidelity routing decision — it controls how much computational attention an agent receives, not what they do.
 
 ### Where complexity lives
 
@@ -95,18 +95,19 @@ The dimensions are not orthogonal — they interact, which is the source of emer
 
 ## World Structure
 
-### Three-tier fidelity model
+### Two-tier fidelity model
 
 **Tier 1 — Individually tracked members**
 Full simulation. Rich structs, memory, relationships, knowledge graphs, cultural memory, individual reasoning, articulation layer active. These are the individuals the player knows by name. They are members of a cohort — the cohort's aggregate stats include their states. The only thing that distinguishes them from unnamed members is that they are tracked individually. The pool is demand-driven up to a performance ceiling — not a fixed number. Early prehistoric band may have 8-12. A city-state may have 50-80. A nation at peak may have 150-200, most inactive at any given time.
 
 Individual tracking is not tribal — it is relational. An agent is tracked individually because they matter to the story regardless of which group they belong to. Group affiliation is a property of the agent, not a criterion for individual tracking.
 
-**Tier 2 — Full-pipeline cohorts**
-The focus civilization and any group with meaningful relationship to it. A cohort represents the full population of a group — named agents included. All aggregate fields are populated and updated each tick: trait distributions, need satisfaction rates, belief profiles, capability profiles. Named members contribute their individual state to these aggregates each tick. Scales naturally as the focus group grows — a city of ten thousand does not need ten thousand Agent records; it needs a full-pipeline cohort and a named cast of ~30-80 individuals tracked at full fidelity.
+**Tier 2 — Cohorts at variable pipeline depth**
+All groups — the focus civilization, groups with meaningful relationship to it, and distant foreign groups — are represented by the same `Cohort` type. Pipeline depth varies by relationship to the focus civilization, not by struct type.
 
-**Tier 3 — Sparse-pipeline cohorts**
-Foreign groups with no direct relationship to the focus civilization. **Same `Cohort` type as Tier 2 — different pipeline depth, not a different struct.** Each tick, only the sparse pipeline runs: population dynamics, resource pressure, aggression update, event threshold checks. Rich aggregate fields (trait distributions, need satisfaction, capability profiles) are empty. The belief profile contains only dominant beliefs sparse enough to drive border-crossing transmission.
+The focus civilization and any group with meaningful relationship to it run the **full pipeline**: all aggregate fields populated and updated each tick — trait distributions, need satisfaction rates, belief profiles, capability profiles. Named members contribute their individual state to these aggregates each tick. Scales naturally as the focus group grows — a city of ten thousand does not need ten thousand Agent records; it needs a full-pipeline cohort and a named cast of ~30-80 individuals tracked at full fidelity.
+
+Foreign groups with no direct relationship to the focus civilization run the **sparse pipeline**: each tick, only population dynamics, resource pressure, aggression update, and event threshold checks run. Rich aggregate fields (trait distributions, need satisfaction, capability profiles) are empty. The belief profile contains only dominant beliefs sparse enough to drive border-crossing transmission.
 
 This is a routing decision, not a type distinction. When a distant civilization makes contact, its cohort warms up: rich fields are populated by sampling from the summary stats already present, and it begins running the full pipeline. No migration, no struct change — just filling in previously empty fields and increasing pipeline depth.
 
