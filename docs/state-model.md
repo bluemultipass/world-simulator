@@ -329,7 +329,8 @@ Values accumulate from contact events — they are not assigned. `hostility` ris
 | `hostility` | `f32` | Accumulated from raids and conflicts. Decays over time. |
 | `cooperation` | `f32` | Accumulated from trade and aid. Decays over time. |
 | `cultural_exchange` | `f32` | Degree of concept and capability transmission that has occurred. Decays slowly. Used to weight diffusion probability when contact recurs. |
-| `contact_log` | `Vec<CivContactEntry>` | Contact events ordered by tick. Pruned by salience — low-salience entries fade; high-salience events persist indefinitely regardless of age. A devastating war from five centuries ago may still shape the relationship. |
+| `agreements` | `Vec<CivAgreement>` | Active and recently broken formal agreements. Empty until explicit diplomacy has occurred. |
+| `contact_log` | `Vec<CivContactEntry>` | Contact events ordered by tick. Pruned by salience — low-salience entries fade; high-salience events persist indefinitely regardless of age. A devastating war from five centuries ago may still shape the relationship. Treaty formation and dissolution appear here as high-salience entries. |
 
 ### CivContactEntry
 
@@ -340,6 +341,34 @@ Values accumulate from contact events — they are not assigned. `hostility` ris
 | `initiator` | `CivId` | Which civ initiated. |
 | `outcome` | `ContactOutcome` | `Success`, `Failure`, `Partial`. Drives how much aggregate fields shift. |
 | `salience` | `f32` | Historical weight. High-salience entries decay slower and are pruned last. A founding war or a pivotal trade alliance stays in the log indefinitely; a routine border crossing fades quickly. |
+
+### CivAgreement
+
+Formal commitment between two civilizations. Whether a civ honors its obligations is determined by agent-level decisions — leader disposition, resource pressure, political stability — not by the agreement itself. The agreement is state; honoring it is emergent.
+
+Broken agreements are retained with `AgreementStatus::Broken` rather than deleted. A violated pact is a high-salience historical fact that should raise hostility, reduce future cooperation potential, and mark the breaker in the contact log.
+
+| Field | Type | Notes |
+|---|---|---|
+| `agreement_type` | `AgreementType` | What kind of commitment. |
+| `formed_tick` | `u64` | When the agreement was established. |
+| `status` | `AgreementStatus` | Current state. |
+
+```
+AgreementType:
+    MutualDefense     // obligation to assist if the other is attacked
+    NonAggression     // commitment not to raid or attack
+    Tribute           // one-way resource flow; encodes asymmetric power
+    TradeCompact      // formalized trade with mutual expectations
+    Alliance          // broad cooperation; typically implies mutual defense
+```
+
+```
+AgreementStatus:
+    Active
+    Broken { by: CivId, at_tick: u64 }   // who broke it and when; informs hostility and future trust
+    Expired                               // lapsed without violation
+```
 
 ### CivContactType
 
