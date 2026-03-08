@@ -5,13 +5,6 @@ pub mod physical;
 pub mod state;
 pub mod tick;
 
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn smoke() {
-        assert!(true);
-    }
-}
 
 #[cfg(test)]
 mod phase2_tests {
