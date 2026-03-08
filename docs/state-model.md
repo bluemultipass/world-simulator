@@ -1,5 +1,47 @@
 # State Model
 
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Contents**
+
+- [WorldState](#worldstate)
+- [WorldClock](#worldclock)
+- [Agent (Tier 1)](#agent-tier-1)
+  - [Identity](#identity)
+  - [Needs](#needs)
+  - [Traits](#traits)
+  - [Relationships](#relationships)
+    - [Relationship](#relationship)
+  - [Memory](#memory)
+    - [MemoryEntry](#memoryentry)
+    - [BeliefEntry](#beliefentry)
+  - [Knowledge](#knowledge)
+- [Concept Registry](#concept-registry)
+  - [Concept](#concept)
+  - [ConceptType](#concepttype)
+  - [UtilityModifier](#utilitymodifier)
+  - [TransmissionProfile](#transmissionprofile)
+  - [EmergenceConditions](#emergenceconditions)
+- [Capability Graph](#capability-graph)
+  - [Capability](#capability)
+  - [DiscoveryMechanism](#discoverymechanism)
+  - [One DAG, two node types](#one-dag-two-node-types)
+- [Cohort](#cohort)
+- [Civilization](#civilization)
+- [CivRelation](#civrelation)
+  - [CivContactEntry](#civcontactentry)
+  - [CivAgreement](#civagreement)
+  - [CivContactType](#civcontacttype)
+  - [ContactOutcome](#contactoutcome)
+- [PhysicalWorld](#physicalworld)
+  - [Tile](#tile)
+- [CivilizationalMetrics](#civilizationalmetrics)
+  - [MetricValue](#metricvalue)
+  - [PopulationState](#populationstate)
+  - [Why velocity is load-bearing](#why-velocity-is-load-bearing)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 Concrete specification of what the simulation stores. For the conceptual design behind these fields, see [simulation-entities.md](simulation-entities.md). For how state transitions work, see [architecture.md](architecture.md).
 
 All continuous values are `f32` in `[0.0, 1.0]` unless noted. Need satisfaction values use: `0.0` = completely unmet / critical, `1.0` = fully satisfied. They decay exponentially over time; agents act to restore them.
@@ -312,6 +354,83 @@ Every civilization — including the focus civilization — has a `Civilization`
 | `location` | `RegionId` | Approximate geographic zone. More precise location is on the Cohort. |
 | `aggression` | `MetricValue` | Disposition toward neighbors. Rising + high `resource_pressure` → raids. |
 | `metrics` | `CivilizationalMetrics` | Detailed structural metrics. Fully populated for focus civ and related civs; sparse for distant civs. |
+| `inter_civ_relations` | `BTreeMap<CivId, CivRelation>` | Sparse — only civs with actual contact history. |
+
+---
+
+## CivRelation
+
+Bilateral record between two civilizations. Only exists for pairs that have made actual contact — absent entry means no known contact, not neutrality. Keyed by the other civ's `CivId` in `Civilization.inter_civ_relations`. Both sides maintain their own entry; the records are independent and may diverge (a civ that was raided and a civ that raided have different perspectives on what happened).
+
+Values accumulate from contact events — they are not assigned. `hostility` rises from raids and conflicts; `cooperation` rises from trade and cultural exchange. Both decay toward zero without contact, analogous to agent `Relationship` decay via `last_interaction_tick`.
+
+| Field | Type | Notes |
+|---|---|---|
+| `first_contact_tick` | `u64` | Tick of first recorded interaction. |
+| `last_contact_tick` | `u64` | For decay — accumulated values attenuate without contact. |
+| `hostility` | `f32` | Accumulated from raids and conflicts. Decays over time. |
+| `cooperation` | `f32` | Accumulated from trade and aid. Decays over time. |
+| `cultural_exchange` | `f32` | Degree of concept and capability transmission that has occurred. Decays slowly. Used to weight diffusion probability when contact recurs. |
+| `agreements` | `Vec<CivAgreement>` | Active and recently broken formal agreements. Empty until explicit diplomacy has occurred. |
+| `contact_log` | `Vec<CivContactEntry>` | Contact events ordered by tick. Pruned by salience — low-salience entries fade; high-salience events persist indefinitely regardless of age. A devastating war from five centuries ago may still shape the relationship. Treaty formation and dissolution appear here as high-salience entries. |
+
+### CivContactEntry
+
+| Field | Type | Notes |
+|---|---|---|
+| `tick` | `u64` | When the contact occurred. |
+| `contact_type` | `CivContactType` | What kind of interaction. |
+| `initiator` | `CivId` | Which civ initiated. |
+| `outcome` | `ContactOutcome` | `Success`, `Failure`, `Partial`. Drives how much aggregate fields shift. |
+| `salience` | `f32` | Historical weight. High-salience entries decay slower and are pruned last. A founding war or a pivotal trade alliance stays in the log indefinitely; a routine border crossing fades quickly. |
+
+### CivAgreement
+
+Formal commitment between two civilizations. Whether a civ honors its obligations is determined by agent-level decisions — leader disposition, resource pressure, political stability — not by the agreement itself. The agreement is state; honoring it is emergent.
+
+Broken agreements are retained with `AgreementStatus::Broken` rather than deleted. A violated pact is a high-salience historical fact that should raise hostility, reduce future cooperation potential, and mark the breaker in the contact log.
+
+| Field | Type | Notes |
+|---|---|---|
+| `agreement_type` | `AgreementType` | What kind of commitment. |
+| `formed_tick` | `u64` | When the agreement was established. |
+| `status` | `AgreementStatus` | Current state. |
+
+```
+AgreementType:
+    MutualDefense     // obligation to assist if the other is attacked
+    NonAggression     // commitment not to raid or attack
+    Tribute           // one-way resource flow; encodes asymmetric power
+    TradeCompact      // formalized trade with mutual expectations
+    Alliance          // broad cooperation; typically implies mutual defense
+```
+
+```
+AgreementStatus:
+    Active
+    Broken { by: CivId, at_tick: u64 }   // who broke it and when; informs hostility and future trust
+    Expired                               // lapsed without violation
+```
+
+### CivContactType
+
+```
+CivContactType:
+    Raid              // one civ attacks another for resources or territory
+    Trade             // resource exchange
+    Migration         // population movement across civ boundaries
+    Conflict          // organized, sustained violence; larger scale than a raid
+    CulturalContact   // proximity-based concept or capability diffusion opportunity
+```
+
+### ContactOutcome
+
+```
+ContactOutcome:
+    Success   // initiator achieved their goal
+    Failure   // initiator was repelled or objective unmet
+    Partial   // mixed result
+```
 
 ---
 

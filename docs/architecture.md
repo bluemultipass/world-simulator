@@ -119,9 +119,39 @@ Sparse-pipeline boundary events are converted into narrative events that named a
 
 ---
 
+## State Persistence and Replay
+
+### What determinism actually means here
+
+The simulation is deterministic given a fixed input stream: `seed + player action log`. Player interventions are external inputs — they change world state directly and causally affect everything that follows. A run with divine rain at tick 500 diverges permanently from the same seed with no intervention. "Same seed" alone does not reproduce a run the player has touched.
+
+Correct formulation: **given the same seed and the same sequence of player actions, the simulation produces identical output every time.** The player action log is a required part of the replay input, not an optional addendum.
+
+### Player action log
+
+Every player intervention is appended to a persistent log: what action, at what tick, targeting what. This log, combined with the original seed, is sufficient to reproduce any past state by replaying from genesis. The log is append-only and never modified — it is the authoritative record of what the player did.
+
+### Live world state — mutable in place
+
+`WorldState` is mutated in place each tick. The double-buffer pattern (see below) ensures correctness within a tick — agents read state from tick start, updates apply atomically — but the previous tick's state is not preserved after the tick completes. Only the current state is live.
+
+### Checkpoints
+
+A checkpoint is a full serialization of `WorldState` at a specific tick. Checkpoints are taken automatically at notable events (major threshold crossings, player interventions, significant narrative moments) and on player request.
+
+To reconstruct any past state: load the most recent checkpoint before that tick, then replay forward using the player action log from that checkpoint's tick to the target tick. Replay cost is bounded by the distance to the nearest checkpoint, not by total sim age.
+
+Checkpoints absorb all prior player actions — they capture the world as it actually was, not as it would have been without intervention. This makes them more useful than pure seed-based replay for worlds with significant player history.
+
+### `AgentArchive` — the only immutable object
+
+Dead agents are written to `AgentArchive` and never modified again. Nothing else in the live simulation has a formal immutability guarantee. Live state evolves; the archive is fixed.
+
+---
+
 ## Agent Layer Determinism
 
-The agent layer is deterministic: given the same initial world state and seed, the simulation produces identical output every time. This section documents the implementation constraints that make that true.
+The agent layer is deterministic: given the same seed and player action log, the simulation produces identical output every time. This section documents the implementation constraints that make that true.
 
 ### Seeded PRNG — the foundation
 
