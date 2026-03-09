@@ -593,3 +593,120 @@ mod phase3_tests {
         assert_eq!(world.seed, 42);
     }
 }
+
+#[cfg(test)]
+mod phase4_tests {
+    use crate::physical::physical_update;
+    use crate::state::ids::TileId;
+    use crate::state::physical::{
+        PhysicalWorld, RegenerationRates, ResourceLevels, TerrainType, Tile,
+    };
+
+    fn grassland_tile(food: f32) -> Tile {
+        Tile {
+            id: TileId(1),
+            terrain: TerrainType::Grassland,
+            resources: ResourceLevels {
+                food,
+                ..ResourceLevels::default()
+            },
+            resource_regeneration: RegenerationRates {
+                food: 0.3,
+                ..RegenerationRates::default()
+            },
+            resource_max: ResourceLevels {
+                food: 1.0,
+                ..ResourceLevels::default()
+            },
+            ..Tile::default()
+        }
+    }
+
+    fn world_with_tile(tile: Tile) -> PhysicalWorld {
+        let mut world = PhysicalWorld::default();
+        world.tiles.insert(tile.id, tile);
+        world
+    }
+
+    #[test]
+    fn grassland_food_regenerates_over_one_year() {
+        let mut world = world_with_tile(grassland_tile(0.5));
+        physical_update(&mut world, 1.0);
+        let food = world.tiles[&TileId(1)].resources.food;
+        // Expected: 0.5 + 0.3 * 1.0 = 0.8
+        assert!((food - 0.8).abs() < 1e-5, "expected 0.8, got {food}");
+    }
+
+    #[test]
+    fn regeneration_is_linear_in_delta_t() {
+        // delta_t=10 should regenerate exactly 10× as much as delta_t=1.
+        // resource_max is set high enough (10.0) so the cap is never hit during this test.
+        let uncapped_tile = |food: f32| Tile {
+            id: TileId(1),
+            terrain: TerrainType::Grassland,
+            resources: ResourceLevels {
+                food,
+                ..ResourceLevels::default()
+            },
+            resource_regeneration: RegenerationRates {
+                food: 0.3,
+                ..RegenerationRates::default()
+            },
+            resource_max: ResourceLevels {
+                food: 10.0, // high ceiling so neither delta_t hits it
+                ..ResourceLevels::default()
+            },
+            ..Tile::default()
+        };
+
+        let mut world1 = world_with_tile(uncapped_tile(0.0));
+        physical_update(&mut world1, 1.0);
+        let gain1 = world1.tiles[&TileId(1)].resources.food;
+
+        let mut world10 = world_with_tile(uncapped_tile(0.0));
+        physical_update(&mut world10, 10.0);
+        let gain10 = world10.tiles[&TileId(1)].resources.food;
+
+        assert!(
+            (gain10 - gain1 * 10.0).abs() < 1e-4,
+            "10-year gain ({gain10}) should be 10× 1-year gain ({gain1})"
+        );
+    }
+
+    #[test]
+    fn resource_never_exceeds_baseline_max() {
+        // Start at 0.9 with regen 0.3 over delta_t=10 — would overshoot without clamping.
+        let mut world = world_with_tile(grassland_tile(0.9));
+        physical_update(&mut world, 10.0);
+        let food = world.tiles[&TileId(1)].resources.food;
+        assert!(
+            food <= 1.0,
+            "food ({food}) must not exceed baseline_max 1.0"
+        );
+    }
+
+    #[test]
+    fn resource_never_goes_negative() {
+        // Tile with zero regen — food should stay at 0.0, not drop negative.
+        let tile = Tile {
+            id: TileId(1),
+            terrain: TerrainType::Mountain,
+            resources: ResourceLevels::default(), // all zero
+            resource_regeneration: RegenerationRates::default(), // all zero
+            resource_max: ResourceLevels::default(),
+            ..Tile::default()
+        };
+        let mut world = world_with_tile(tile);
+        physical_update(&mut world, 1.0);
+        let food = world.tiles[&TileId(1)].resources.food;
+        assert!(food >= 0.0, "food ({food}) must not be negative");
+    }
+
+    #[test]
+    fn physical_update_with_no_agents_completes_without_panic() {
+        // genesis produces a world with agents; physical_update only touches tiles.
+        use crate::genesis;
+        let mut world = genesis(42);
+        physical_update(&mut world.world, 1.0); // should not panic
+    }
+}
